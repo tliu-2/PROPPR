@@ -11,20 +11,21 @@ from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 
 if __name__ == '__main__':
-    data = pd.ExcelFile('PROPPR_documents/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx')
+    data = pd.ExcelFile('PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx')
     df = pd.read_excel(data, 'PROPPR_longitudinal_dataset_edm')
     df = df[df['TIMEPOINT'] == 0]
     selected_cols = list(df.iloc[:, 7:50])
     data = df[selected_cols]
     print(data)
 
+    # Impute for missing data entries using mean.
     imp = SimpleImputer(missing_values=np.nan, strategy='mean')
     imp = imp.fit(data)
     data = imp.transform(data)
     # data = data.fillna(0)
     print(data)
 
-
+    # Standardize data.
     scalar = StandardScaler()
     std = scalar.fit_transform(data)
     pca = PCA()
@@ -56,7 +57,8 @@ if __name__ == '__main__':
     plt.title("K-means with PCA Clustering")
     plt.show()
 
-    kmeans_pca = KMeans(n_clusters=2, init='k-means++', random_state=42)
+    # Do k-means
+    kmeans_pca = KMeans(n_clusters=5, init='k-means++', random_state=42)
     kmeans_pca.fit(scores_pca)
 
     df_pca_kmeans = pd.concat([df.reset_index(drop=True), pd.DataFrame(scores_pca)], axis=1)
@@ -65,10 +67,13 @@ if __name__ == '__main__':
     df_pca_kmeans['K-means PCA'] = kmeans_pca.labels_
 
     df_pca_kmeans['Clusters'] = df_pca_kmeans['K-means PCA'].map({0: 'first',
-                                                                 1: 'second'})
+                                                                 1: 'second',
+                                                                  2: 'third',
+                                                                  3: 'fourth',
+                                                                  4: 'fifth'})
     # Plot data by PCA components
-    x_axis = df_pca_kmeans['Component 3']
-    y_axis = df_pca_kmeans['Component 1']
+    x_axis = df_pca_kmeans['Component 1']
+    y_axis = df_pca_kmeans['Component 2']
     plt.figure(figsize=(10, 8))
     sns.scatterplot(x=x_axis, y=y_axis, hue=df_pca_kmeans['Clusters'])
     plt.title("Clusters by PCA Components")
