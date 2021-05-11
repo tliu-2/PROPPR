@@ -1,0 +1,29 @@
+digraph Tree {
+node [shape=box, style="rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label="log2_Hu_IL_6__19 <= -0.2\nmse = 0.2\nsamples = 280\nvalue = 1.5"] ;
+1 [label="log2_timp1 <= 1.3\nmse = 0.2\nsamples = 114\nvalue = 1.2"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="log2_hmgb1 <= -2.1\nmse = 0.1\nsamples = 108\nvalue = 1.2"] ;
+1 -> 2 ;
+3 [label="mse = 0.1\nsamples = 3\nvalue = 1.9"] ;
+2 -> 3 ;
+4 [label="mse = 0.1\nsamples = 105\nvalue = 1.1"] ;
+2 -> 4 ;
+5 [label="mse = 0.0\nsamples = 6\nvalue = 2.0"] ;
+1 -> 5 ;
+6 [label="log2_timp2 <= 0.0\nmse = 0.2\nsamples = 166\nvalue = 1.7"] ;
+0 -> 6 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+7 [label="log2_hmgb1 <= 0.3\nmse = 0.2\nsamples = 80\nvalue = 1.5"] ;
+6 -> 7 ;
+8 [label="mse = 0.2\nsamples = 65\nvalue = 1.4"] ;
+7 -> 8 ;
+9 [label="mse = 0.1\nsamples = 15\nvalue = 1.9"] ;
+7 -> 9 ;
+10 [label="log2_tpa <= -0.6\nmse = 0.1\nsamples = 86\nvalue = 1.9"] ;
+6 -> 10 ;
+11 [label="mse = 0.2\nsamples = 20\nvalue = 1.6"] ;
+10 -> 11 ;
+12 [label="mse = 0.0\nsamples = 66\nvalue = 2.0"] ;
+10 -> 12 ;
+}
