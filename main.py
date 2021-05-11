@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     df = pd.read_excel(data, 'timepoint_0')
     inj_col = df['INJ_MECH']
     # target_col = df['_30DAYST_SURV'] + 1
-    target_col = df['ARDS'] + 1
+    target_col = df['BLUNT_INJ'] + 1
     # selected_cols = list(df.iloc[:, 7:50])
     selected_cols = list(df.iloc[:, 50:93])
     print(selected_cols)
@@ -42,8 +43,8 @@ if __name__ == "__main__":
     features = imp2.transform(features)
     features = pd.DataFrame(features)
     features.columns = selected_cols
-    features = features.assign(INJ_MECH=inj_col)
-    features = pd.get_dummies(features)
+    #features = features.assign(INJ_MECH=inj_col)
+    #features = pd.get_dummies(features)
     print(features.head())
 
     labels = np.array(target_col)
@@ -53,16 +54,20 @@ if __name__ == "__main__":
     train_features, test_features, train_labels, test_labels = train_test_split(features,
                                                                                 labels, test_size=0.25,
                                                                                 random_state=42)
+    sc = StandardScaler()
+    train_features = sc.fit_transform(train_features)
+    test_features = sc.transform(test_features)
     print('Training Features Shape: ', train_features.shape)
     print('Training Labels Shape: ', train_labels.shape)
     print('Testing Features Shape: ', test_features.shape)
     print('Testing Labels Shape: ', test_labels.shape)
 
-    rf = RandomForestRegressor(n_estimators=1000, random_state=42)
+    rf = RandomForestRegressor(n_estimators=200, random_state=42)
     rf.fit(train_features, train_labels)
 
     predictions = rf.predict(test_features)
     errors = abs(predictions - test_labels)
+    # print("errors = ", errors)
     print('Mean Absolute Error: ', np.mean(errors))
 
     mape = 100 * (errors / test_labels)
@@ -92,6 +97,7 @@ if __name__ == "__main__":
     x_val = list(range(len(importances)))
     plt.bar(x_val, importances, orientation='vertical')
     plt.xticks(x_val, feature_list, rotation='vertical')
+    plt.ylabel("Var Importance")
     plt.show()
 
     runKmeans = False
