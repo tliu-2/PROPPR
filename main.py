@@ -13,9 +13,10 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import export_graphviz
 import pydot
 from scipy import stats as st
+from yellowbrick.cluster import SilhouetteVisualizer
 
 
-def rand_forest(data):
+def rand_forest(df):
     inj_col = df['INJ_MECH']
     # target_col = df['_30DAYST_SURV'] + 1
     target_col = df['BLUNT_INJ'] + 1
@@ -100,7 +101,19 @@ def rand_forest(data):
     plt.show()
 
 
-def pca_kmeans(data):
+def pca_kmeans(df, t):
+    selected_cols = list(df.iloc[:, 50:93])
+    # print(selected_cols)
+    data = df[selected_cols]
+    data = data.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
+                      'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
+    selected_cols.remove('log2_Hu_IL_2__38')
+    selected_cols.remove('log2_Hu_IL_15__73')
+    selected_cols.remove('log2_Hu_IL_12_p70__75')
+    selected_cols.remove('log2_Hu_IL_17__76')
+    selected_cols.remove('log2_Hu_FGF_basic__44')
+    selected_cols.remove('log2_Hu_GM_CSF__34')
+    selected_cols.remove('log2_Hu_VEGF__45')
     # Impute for missing data entries using mean.
     imp = SimpleImputer(missing_values=np.nan, strategy='mean')
     imp = imp.fit(data)
@@ -113,19 +126,31 @@ def pca_kmeans(data):
     pca = PCA()
     pca.fit(std)
 
+    fig1_name = "Num Components " + t + ".png"
     # Determine how many compnents.
     plt.figure(figsize=(10, 8))
     plt.plot(range(1, 37), pca.explained_variance_ratio_.cumsum(), marker='o', linestyle='--')
     plt.title("Explained Variance by Components")
     plt.xlabel("Number of Components")
     plt.ylabel("Cumulative Explained Variance")
-    plt.grid()
-    plt.show()
+    plt.grid(True)
+    plt.savefig(fig1_name)
+    plt.close()
 
     pca = PCA(n_components=15)
     pca.fit(std)
     scores_pca = pca.transform(std)
 
+    features = range(pca.n_components_)
+    plt.figure(figsize=(10, 8))
+    plt.bar(features,pca.explained_variance_ratio_)
+    plt.xlabel('PCA Components')
+    plt.ylabel('Variance %')
+    plt.xticks(features)
+    plt.savefig('PCA Components Variance % ' + t + ".png")
+    plt.close()
+
+    fig2_name = "Number of Clusters " + t + ".png"
     # Determine how many clusters.
     wcss = []
     for i in range(1, 21):
@@ -134,31 +159,44 @@ def pca_kmeans(data):
         wcss.append(kmeans_pca.inertia_)
 
     plt.figure(figsize=(10, 8))
+    plt.grid(True)
     plt.plot(range(1, 21), wcss, marker='o', linestyle='--')
     plt.xlabel("Number of clusters")
     plt.ylabel("WCSS")
     plt.title("K-means with PCA Clustering")
-    plt.grid()
-    plt.show()
+    plt.xticks(range(1, 21))
+    plt.savefig(fig2_name)
+    plt.close()
 
-    range_clusters = range(2, 21)
-    for k in range_clusters:
-        clusterer = KMeans(n_clusters=k)
-        preds = clusterer.fit_predict(data)
-        centers = clusterer.cluster_centers_
-        score = silhouette_score(data, preds)
-        print("For n_clusters = {}, silhouette score is {})".format(k, score))
+    # range_clusters = range(2, 21)
+    # for k in range_clusters:
+    #     clusterer = KMeans(n_clusters=k)
+    #     preds = clusterer.fit_predict(data)
+    #     centers = clusterer.cluster_centers_
+    #     score = silhouette_score(data, preds)
+    #     print("For n_clusters = {}, silhouette score is {})".format(k, score))
+
+    fig3_name = "Silhouette Scores " + t + ".png"
+    # Silhouette Scores:
+    fig, ax = plt.subplots(2, 2, figsize=(15, 8))
+    for i in [2, 3, 4, 5]:
+        km = KMeans(n_clusters=i, init='k-means++', n_init=10, max_iter=100, random_state=42)
+        q, mod = divmod(i, 2)
+        visualizer = SilhouetteVisualizer(km, colors='yellowbrick', ax=ax[q-1][mod])
+        visualizer.fit(std)
+    plt.savefig(fig3_name)
+    plt.close()
 
     # Do k-means
     kmeans_pca = KMeans(n_clusters=2, init='k-means++', random_state=42)
     kmeans_pca.fit(scores_pca)
 
     df_pca_kmeans = pd.concat([df.reset_index(drop=True), pd.DataFrame(scores_pca)], axis=1)
-    df_pca_kmeans.columns.values[-15:] = ['Component 1', 'Component 2', 'Component 3', 'Component 4', 'Component 5',
-                                          'Component 6', 'Component 7', 'Component 8', 'Component 9',
-                                          'Component 10',
-                                          'Component 11', 'Component 12', 'Component 13', 'Component 14',
-                                          'Component 15']
+    df_pca_kmeans.columns.values[-15:] = ['Component 0', 'Component 1', 'Component 2', 'Component 3', 'Component 4',
+                                          'Component 5', 'Component 6', 'Component 7', 'Component 8',
+                                          'Component 9',
+                                          'Component 10', 'Component 11', 'Component 12', 'Component 13',
+                                          'Component 14']
     df_pca_kmeans['K-means PCA'] = kmeans_pca.labels_
 
     df_pca_kmeans['Clusters'] = df_pca_kmeans['K-means PCA'].map(
@@ -166,16 +204,19 @@ def pca_kmeans(data):
     # 4: 'fifth'})
     df_pca_kmeans.head()
 
+    fig4_name = "K-Means Clustering with PCA " + t + ".png"
     # Plot data by PCA components
-    x_axis = df_pca_kmeans['Component 1']
-    y_axis = df_pca_kmeans['Component 2']
+    x_axis = df_pca_kmeans['Component 0']
+    y_axis = df_pca_kmeans['Component 1']
     plt.figure(figsize=(10, 8))
-    sns.scatterplot(x=x_axis, y=y_axis, hue=df_pca_kmeans['INJ_MECH'])
-    plt.title("Clusters by PCA Components")
-    plt.show()
+    sns.scatterplot(x=x_axis, y=y_axis, hue=df_pca_kmeans['Clusters'], palette='tab10')
+    plt.title("Clusters by PCA Components " + t)
+    plt.savefig(fig4_name)
+    plt.close()
 
 
-def compare_blunt_pen(df):
+def compare_blunt_pen(df, t):
+    f = open(t, 'w')
     df_blunt = df.loc[df['INJ_MECH'] == 'Blunt Injury Only']
     df_pen = df.loc[df['INJ_MECH'] == 'Penetrating Injury Only']
     selected_cols = list(df.iloc[:, 50:93])
@@ -189,9 +230,12 @@ def compare_blunt_pen(df):
     # print("T-test IL-6:")
     # print(st.ttest_ind(df_blunt_il6, df_pen_il6, nan_policy='omit'))
 
-    df_blunt_st = df_blunt.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
+    df_blunt = df_blunt[selected_cols]
+    df_pen = df_pen[selected_cols]
+
+    df_blunt = df_blunt.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
                                  'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
-    df_pen_st = df_pen.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
+    df_pen = df_pen.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
                              'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
     selected_cols.remove('log2_Hu_IL_2__38')
     selected_cols.remove('log2_Hu_IL_15__73')
@@ -201,25 +245,70 @@ def compare_blunt_pen(df):
     selected_cols.remove('log2_Hu_GM_CSF__34')
     selected_cols.remove('log2_Hu_VEGF__45')
 
+    # Test if vars are in a normal distribution.
     for var in selected_cols:
         temp_b = df_blunt[var]
         temp_p = df_pen[var]
-        print("T-test on:", var)
-        t_stat, pval = st.ttest_ind(temp_b, temp_p, nan_policy='omit')
-        print("T statistic:", t_stat)
-        print("p-value:", pval * 36)  # Multiply by the # of variables being compared - in this case 36.
-        if pval < 0.05:
-            print("Meets threshold for statistical significance. \n")
-        else:
-            print("\n")
+        test_stat_b, p_val_b = st.normaltest(temp_b, nan_policy='omit')
+        test_stat_p, p_val_p = st.normaltest(temp_p, nan_policy='omit')
+        if p_val_b < 0.05:  # Null Hypothesis is that var comes from a normal distribution
+            line = var + " blunt does not come from a normal distribution. \n"
+            f.write(line)
+        if p_val_p < 0.05:  # Null Hypothesis is that var comes from a normal distribution
+            line = var + " pen does not come from a normal distribution. \n"
+            f.write(line)
 
-    df_blunt_st = df_blunt[selected_cols]
-    df_pen_st = df_pen[selected_cols]
-    df_blunt_st.describe().to_csv('blunt_description.csv')
-    df_pen_st.describe().to_csv('pen_description.csv')
+    f.write("\n")
+    # Levene Test for equal variances.
+    eq_variance_vars = []
+    for var in selected_cols:
+        temp_b = df_blunt[var].dropna()
+        temp_p = df_pen[var].dropna()
+        stat, p = st.levene(temp_b, temp_p, center='median')
+        if p < 0.05:
+            line = var + " has equal variance \n"
+            f.write(line)
+            eq_variance_vars.append(var)
+
+    f.write("\n")
+    for var in selected_cols:
+        temp_b = df_blunt[var]
+        temp_p = df_pen[var]
+        line = "T-test on: " + var + "\n"
+        f.write(line)
+        if var in eq_variance_vars:
+            # print("Doing equal variance t-test")
+            t_stat, pval = st.ttest_ind(temp_b, temp_p, equal_var=True, nan_policy='omit')
+        else:
+            t_stat, pval = st.ttest_ind(temp_b, temp_p, equal_var=False, nan_policy='omit')
+
+        s_p_val = str(pval)
+        s_t_stat = str(t_stat)
+
+        t_stat_line = "T statistic: " + s_t_stat + "\n"
+        p_val_line = "p-value: " + s_p_val + "\n"
+        f.write(t_stat_line)
+        f.write(p_val_line)
+        if pval < 0.05 / 36:  # Bonferroni correction - divide the threshold by number of tests - in this case 36.
+            f.write("Meets threshold for statistical significance. \n\n")
+        else:
+            f.write("\n\n")
+
+    # df_blunt_st = df_blunt[selected_cols]
+    # df_pen_st = df_pen[selected_cols]
+    # df_blunt_st.describe().to_csv('blunt_description.csv')
+    # df_pen_st.describe().to_csv('pen_description.csv')
+    f.close()
 
 
 if __name__ == "__main__":
     org_data = pd.ExcelFile('PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx')
-    df = pd.read_excel(org_data, 'timepoint_0')
-    compare_blunt_pen(df)
+    timepoints = ['timepoint_0', 'timepoint_2', 'timepoint_4', 'timepoint_6', 'timepoint_12', 'timepoint_24',
+                  'timepoint_48', 'timepoint_72']
+
+    for t in timepoints:
+        df = pd.read_excel(org_data, t)
+        compare_blunt_pen(df, t)
+        pca_kmeans(df, t)
+        print("Done with: ", t)
+
