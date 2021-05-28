@@ -16,93 +16,13 @@ from scipy import stats as st
 from yellowbrick.cluster import SilhouetteVisualizer
 
 
-def rand_forest(df):
+def rand_forest(df, t):
+    f = open('rand_forest ' + t + '.txt', 'w')
     inj_col = df['INJ_MECH']
     # target_col = df['_30DAYST_SURV'] + 1
     target_col = df['BLUNT_INJ'] + 1
     # selected_cols = list(df.iloc[:, 7:50])
-    selected_cols = list(df.iloc[:, 50:93])
-    print(selected_cols)
-    data = df[selected_cols]
-    data = data.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
-                      'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
-    selected_cols.remove('log2_Hu_IL_2__38')
-    selected_cols.remove('log2_Hu_IL_15__73')
-    selected_cols.remove('log2_Hu_IL_12_p70__75')
-    selected_cols.remove('log2_Hu_IL_17__76')
-    selected_cols.remove('log2_Hu_FGF_basic__44')
-    selected_cols.remove('log2_Hu_GM_CSF__34')
-    selected_cols.remove('log2_Hu_VEGF__45')
-    print(selected_cols)
-    percent_missing = data.isna().sum() * 100 / len(data)
-    # Random Forest Analysis
-    features = data
-    print(data)
-    imp2 = SimpleImputer(missing_values=np.nan, strategy='mean')
-    imp2 = imp2.fit(features)
-    features = imp2.transform(features)
-    features = pd.DataFrame(features)
-    features.columns = selected_cols
-    # features = features.assign(INJ_MECH=inj_col)
-    # features = pd.get_dummies(features)
-    print(features.head())
-
-    labels = np.array(target_col)
-    feature_list = list(features.columns)
-    features = np.array(features)
-
-    train_features, test_features, train_labels, test_labels = train_test_split(features,
-                                                                                labels, test_size=0.25,
-                                                                                random_state=42)
-    sc = StandardScaler()
-    train_features = sc.fit_transform(train_features)
-    test_features = sc.transform(test_features)
-    print('Training Features Shape: ', train_features.shape)
-    print('Training Labels Shape: ', train_labels.shape)
-    print('Testing Features Shape: ', test_features.shape)
-    print('Testing Labels Shape: ', test_labels.shape)
-
-    rf = RandomForestRegressor(n_estimators=200, random_state=42)
-    rf.fit(train_features, train_labels)
-
-    predictions = rf.predict(test_features)
-    errors = abs(predictions - test_labels)
-    # print("errors = ", errors)
-    print('Mean Absolute Error: ', np.mean(errors))
-
-    mape = 100 * (errors / test_labels)
-
-    acc = 100 - np.mean(mape)
-    print('Accuracy: ', round(acc, 2), "%")
-    tree = rf.estimators_[5]
-    export_graphviz(tree, out_file='tree.dot', feature_names=feature_list, rounded=True, precision=1)
-    (graph,) = pydot.graph_from_dot_file('tree.dot')
-    graph.write_png('tree.png')
-
-    rf_small = RandomForestRegressor(n_estimators=10, max_depth=3)
-    rf_small.fit(train_features, train_labels)
-    tree_small = rf_small.estimators_[5]
-    export_graphviz(tree_small, out_file='small_tree.dot', feature_names=feature_list, rounded=True, precision=1)
-    (graph,) = pydot.graph_from_dot_file('small_tree.dot')
-    graph.write_png('small_tree.png')
-
-    importances = list(rf.feature_importances_)
-
-    # feature_importances = [(features, importances) for feature, importance in zip(feature_list, importances)]
-    # feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
-    # [print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
-    for feature, importance in zip(feature_list, importances):
-        print(f'Var: {feature} Importance: {importance}')
-
-    x_val = list(range(len(importances)))
-    plt.bar(x_val, importances, orientation='vertical')
-    plt.xticks(x_val, feature_list, rotation='vertical')
-    plt.ylabel("Var Importance")
-    plt.show()
-
-
-def pca_kmeans(df, t):
-    selected_cols = list(df.iloc[:, 50:93])
+    selected_cols = list(df.iloc[:, 50:93])  # log adjusted values.
     # print(selected_cols)
     data = df[selected_cols]
     data = data.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
@@ -114,15 +34,110 @@ def pca_kmeans(df, t):
     selected_cols.remove('log2_Hu_FGF_basic__44')
     selected_cols.remove('log2_Hu_GM_CSF__34')
     selected_cols.remove('log2_Hu_VEGF__45')
+    # print(selected_cols)
+    percent_missing = data.isna().sum() * 100 / len(data)
+    # Random Forest Analysis
+    features = data
+    # print(data)
+    imp2 = SimpleImputer(missing_values=np.nan, strategy='mean')
+    imp2 = imp2.fit(features)
+    features = imp2.transform(features)
+    features = pd.DataFrame(features)
+    features.columns = selected_cols
+    # features = features.assign(INJ_MECH=inj_col)
+    # features = pd.get_dummies(features)
+    # print(features.head())
+
+    labels = np.array(target_col)
+    feature_list = list(features.columns)
+    features = np.array(features)
+
+    train_features, test_features, train_labels, test_labels = train_test_split(features,
+                                                                                labels, test_size=0.25,
+                                                                                random_state=42)
+    sc = StandardScaler()
+    train_features = sc.fit_transform(train_features)
+    test_features = sc.transform(test_features)
+    # print('Training Features Shape: ', train_features.shape)
+    # print('Training Labels Shape: ', train_labels.shape)
+    # print('Testing Features Shape: ', test_features.shape)
+    # print('Testing Labels Shape: ', test_labels.shape)
+
+    rf = RandomForestRegressor(n_estimators=200, random_state=42)
+    rf.fit(train_features, train_labels)
+
+    predictions = rf.predict(test_features)
+    errors = abs(predictions - test_labels)
+    # print("errors = ", errors)
+    line = 'Mean Absolute Error: ' + str(np.mean(errors))
+    f.write(line)
+    f.write("\n")
+
+    mape = 100 * (errors / test_labels)
+
+    acc = 100 - np.mean(mape)
+    line = 'Accuracy: ' + str(round(acc, 2)) + '%'
+    f.write(line)
+    f.write("\n")
+
+    tree = rf.estimators_[5]
+    treename = 'tree_' + t + '.dot'
+    pngname = 'tree_' + t + '.png'
+    export_graphviz(tree, out_file=treename, feature_names=feature_list, rounded=True, precision=1)
+    (graph,) = pydot.graph_from_dot_file(treename)
+    graph.write_png(pngname)
+
+    small_treename = 'snall_tree_' + t + '.dot'
+    small_pngname = 'small_tree_' + t + '.png'
+    rf_small = RandomForestRegressor(n_estimators=10, max_depth=3)
+    rf_small.fit(train_features, train_labels)
+    tree_small = rf_small.estimators_[5]
+    export_graphviz(tree_small, out_file=small_treename, feature_names=feature_list, rounded=True, precision=1)
+    (graph,) = pydot.graph_from_dot_file(small_treename)
+    graph.write_png(small_pngname)
+
+    importances = list(rf.feature_importances_)
+
+    f.write("\n\n")
+    for feature, importance in zip(feature_list, importances):
+        f.write(f'Var: {feature} Importance: {importance} \n')
+
+    x_val = list(range(len(importances)))
+    plt.bar(x_val, importances, orientation='vertical')
+    plt.xticks(x_val, feature_list, rotation='vertical')
+    plt.ylabel("Var Importance")
+    plt.title("Variable Importance in BLUNT_INJ " + t)
+    plt.savefig("Variable Importance BLUNT_INJ" + t + ".png")
+    plt.close()
+
+    f.close()
+
+
+def pca_kmeans(df, t):
+    selected_cols = list(df.iloc[:, 50:93])
+
+    data = df[selected_cols]
+
+    # These columns are dropped because more than 20% of their entries are empty.
+    data = data.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
+                      'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
+    selected_cols.remove('log2_Hu_IL_2__38')
+    selected_cols.remove('log2_Hu_IL_15__73')
+    selected_cols.remove('log2_Hu_IL_12_p70__75')
+    selected_cols.remove('log2_Hu_IL_17__76')
+    selected_cols.remove('log2_Hu_FGF_basic__44')
+    selected_cols.remove('log2_Hu_GM_CSF__34')
+    selected_cols.remove('log2_Hu_VEGF__45')
+
     # Impute for missing data entries using mean.
     imp = SimpleImputer(missing_values=np.nan, strategy='mean')
     imp = imp.fit(data)
     data = imp.transform(data)
-    # data = data.fillna(0)
-    # print(data)
+
     # Standardize data.
     scalar = StandardScaler()
     std = scalar.fit_transform(data)
+    # Fit the standardized data to PCA.
     pca = PCA()
     pca.fit(std)
 
@@ -130,7 +145,7 @@ def pca_kmeans(df, t):
     # Determine how many compnents.
     plt.figure(figsize=(10, 8))
     plt.plot(range(1, 37), pca.explained_variance_ratio_.cumsum(), marker='o', linestyle='--')
-    plt.title("Explained Variance by Components")
+    plt.title("Explained Variance by Components " + t)
     plt.xlabel("Number of Components")
     plt.ylabel("Cumulative Explained Variance")
     plt.grid(True)
@@ -143,10 +158,11 @@ def pca_kmeans(df, t):
 
     features = range(pca.n_components_)
     plt.figure(figsize=(10, 8))
-    plt.bar(features,pca.explained_variance_ratio_)
+    plt.bar(features, pca.explained_variance_ratio_)
     plt.xlabel('PCA Components')
     plt.ylabel('Variance %')
     plt.xticks(features)
+    plt.title('PCA Components and Variance ' + t)
     plt.savefig('PCA Components Variance % ' + t + ".png")
     plt.close()
 
@@ -163,18 +179,10 @@ def pca_kmeans(df, t):
     plt.plot(range(1, 21), wcss, marker='o', linestyle='--')
     plt.xlabel("Number of clusters")
     plt.ylabel("WCSS")
-    plt.title("K-means with PCA Clustering")
+    plt.title("K-means with PCA Clustering " + t)
     plt.xticks(range(1, 21))
     plt.savefig(fig2_name)
     plt.close()
-
-    # range_clusters = range(2, 21)
-    # for k in range_clusters:
-    #     clusterer = KMeans(n_clusters=k)
-    #     preds = clusterer.fit_predict(data)
-    #     centers = clusterer.cluster_centers_
-    #     score = silhouette_score(data, preds)
-    #     print("For n_clusters = {}, silhouette score is {})".format(k, score))
 
     fig3_name = "Silhouette Scores " + t + ".png"
     # Silhouette Scores:
@@ -182,7 +190,7 @@ def pca_kmeans(df, t):
     for i in [2, 3, 4, 5]:
         km = KMeans(n_clusters=i, init='k-means++', n_init=10, max_iter=100, random_state=42)
         q, mod = divmod(i, 2)
-        visualizer = SilhouetteVisualizer(km, colors='yellowbrick', ax=ax[q-1][mod])
+        visualizer = SilhouetteVisualizer(km, colors='yellowbrick', ax=ax[q - 1][mod])
         visualizer.fit(std)
     plt.savefig(fig3_name)
     plt.close()
@@ -202,7 +210,7 @@ def pca_kmeans(df, t):
     df_pca_kmeans['Clusters'] = df_pca_kmeans['K-means PCA'].map(
         {0: 'first', 1: 'second'})  # , 2: 'third', 3: 'fourth',
     # 4: 'fifth'})
-    df_pca_kmeans.head()
+    df_pca_kmeans = df_pca_kmeans.sort_values('Clusters')
 
     fig4_name = "K-Means Clustering with PCA " + t + ".png"
     # Plot data by PCA components
@@ -216,27 +224,18 @@ def pca_kmeans(df, t):
 
 
 def compare_blunt_pen(df, t):
-    f = open(t, 'w')
+    f = open('t-tests ' + t + '.txt', 'w')
     df_blunt = df.loc[df['INJ_MECH'] == 'Blunt Injury Only']
     df_pen = df.loc[df['INJ_MECH'] == 'Penetrating Injury Only']
     selected_cols = list(df.iloc[:, 50:93])
-    # selected_cols = list(df.iloc[:, 7:50])
-    # df_blunt_il6 = df_blunt['log2_Hu_IL_6__19']
-    # df_pen_il6 = df_pen['log2_Hu_IL_6__19']
-
-    # df_blunt_all = df_blunt.iloc[:, 50:93]
-    # df_pen_all = df_pen.iloc[:, 50:93]
-    #
-    # print("T-test IL-6:")
-    # print(st.ttest_ind(df_blunt_il6, df_pen_il6, nan_policy='omit'))
 
     df_blunt = df_blunt[selected_cols]
     df_pen = df_pen[selected_cols]
 
     df_blunt = df_blunt.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
-                                 'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
+                              'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
     df_pen = df_pen.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
-                             'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
+                          'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
     selected_cols.remove('log2_Hu_IL_2__38')
     selected_cols.remove('log2_Hu_IL_15__73')
     selected_cols.remove('log2_Hu_IL_12_p70__75')
@@ -274,6 +273,9 @@ def compare_blunt_pen(df, t):
     for var in selected_cols:
         temp_b = df_blunt[var]
         temp_p = df_pen[var]
+        temp_bar = {var + '_blunt': np.mean(df_blunt[var]), var + '_pen': np.mean(df_pen[var])}
+        names = list(temp_bar.keys())
+        values = list(temp_bar.values())
         line = "T-test on: " + var + "\n"
         f.write(line)
         if var in eq_variance_vars:
@@ -291,6 +293,10 @@ def compare_blunt_pen(df, t):
         f.write(p_val_line)
         if pval < 0.05 / 36:  # Bonferroni correction - divide the threshold by number of tests - in this case 36.
             f.write("Meets threshold for statistical significance. \n\n")
+            fig, ax = plt.subplots()
+            ax.bar(names, values)
+            ax.set_ylabel('log concentration')
+            plt.show()
         else:
             f.write("\n\n")
 
@@ -310,5 +316,5 @@ if __name__ == "__main__":
         df = pd.read_excel(org_data, t)
         compare_blunt_pen(df, t)
         pca_kmeans(df, t)
+        rand_forest(df, t)
         print("Done with: ", t)
-
