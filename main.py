@@ -22,9 +22,12 @@ def rand_forest(df, t):
     # target_col = df['_30DAYST_SURV'] + 1
     target_col = df['BLUNT_INJ'] + 1
     # selected_cols = list(df.iloc[:, 7:50])
+    biomarkers = range(50, 93)
     selected_cols = list(df.iloc[:, 50:93])  # log adjusted values.
-    # print(selected_cols)
+
     data = df[selected_cols]
+    percent_missing = data.isna().sum() * 100 / len(data)
+    # These columns all have a % missing > 20%
     data = data.drop(['log2_Hu_IL_2__38', 'log2_Hu_IL_15__73', 'log2_Hu_IL_12_p70__75', 'log2_Hu_IL_17__76',
                       'log2_Hu_FGF_basic__44', 'log2_Hu_GM_CSF__34', 'log2_Hu_VEGF__45'], axis=1)
     selected_cols.remove('log2_Hu_IL_2__38')
@@ -34,8 +37,7 @@ def rand_forest(df, t):
     selected_cols.remove('log2_Hu_FGF_basic__44')
     selected_cols.remove('log2_Hu_GM_CSF__34')
     selected_cols.remove('log2_Hu_VEGF__45')
-    # print(selected_cols)
-    percent_missing = data.isna().sum() * 100 / len(data)
+
     # Random Forest Analysis
     features = data
     # print(data)
@@ -44,9 +46,6 @@ def rand_forest(df, t):
     features = imp2.transform(features)
     features = pd.DataFrame(features)
     features.columns = selected_cols
-    # features = features.assign(INJ_MECH=inj_col)
-    # features = pd.get_dummies(features)
-    # print(features.head())
 
     labels = np.array(target_col)
     feature_list = list(features.columns)
@@ -58,17 +57,11 @@ def rand_forest(df, t):
     sc = StandardScaler()
     train_features = sc.fit_transform(train_features)
     test_features = sc.transform(test_features)
-    # print('Training Features Shape: ', train_features.shape)
-    # print('Training Labels Shape: ', train_labels.shape)
-    # print('Testing Features Shape: ', test_features.shape)
-    # print('Testing Labels Shape: ', test_labels.shape)
-
     rf = RandomForestRegressor(n_estimators=200, random_state=42)
     rf.fit(train_features, train_labels)
 
     predictions = rf.predict(test_features)
     errors = abs(predictions - test_labels)
-    # print("errors = ", errors)
     line = 'Mean Absolute Error: ' + str(np.mean(errors))
     f.write(line)
     f.write("\n")
@@ -114,6 +107,7 @@ def rand_forest(df, t):
 
 
 def pca_kmeans(df, t):
+    biomarkers = range(50, 93)
     selected_cols = list(df.iloc[:, 50:93])
 
     data = df[selected_cols]
@@ -227,6 +221,7 @@ def compare_blunt_pen(df, t):
     f = open('t-tests ' + t + '.txt', 'w')
     df_blunt = df.loc[df['INJ_MECH'] == 'Blunt Injury Only']
     df_pen = df.loc[df['INJ_MECH'] == 'Penetrating Injury Only']
+    biomarkers = range(50, 93)
     selected_cols = list(df.iloc[:, 50:93])
 
     df_blunt = df_blunt[selected_cols]
