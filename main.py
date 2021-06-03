@@ -179,8 +179,13 @@ def pca_kmeans(df, t):
         scalar = StandardScaler()
         std = scalar.fit_transform(data)
         # Fit the standardized data to PCA.
-        pca = PCA()
+        if t == 'timepoint_24':
+            pca = PCA(n_components=2)
+        else:
+            pca = PCA(n_components=15)
         pca.fit(std)
+        scores_pca = pca.transform(std)
+        features = range(pca.n_components_)
 
         fig1_name = "Num Components " + t + ".png"
         # Determine how many compnents.
@@ -193,14 +198,7 @@ def pca_kmeans(df, t):
         plt.savefig('k-means_graphs/' + fig1_name)
         plt.close()
 
-        if t == 'timepoint_24':
-            pca = PCA(n_components=2)
-        else:
-            pca = PCA(n_components=15)
-        pca.fit(std)
-        scores_pca = pca.transform(std)
 
-        features = range(pca.n_components_)
         plt.figure(figsize=(10, 8))
         plt.bar(features, pca.explained_variance_ratio_)
         plt.xlabel('PCA Components')
@@ -275,6 +273,12 @@ def pca_kmeans(df, t):
         plt.savefig('k-means_graphs/' + fig4_name)
         plt.close()
 
+        model = pca.fit(std)
+        X_pc = model.transform(std)
+        n_pcs = model.components_.shape[0]
+
+        most_important = [np.abs(model.components_[i]).argmax for i in range(n_pcs)]
+        initial_feature_names = selected_cols
 
 def compare_blunt_pen(df, t):
     """
