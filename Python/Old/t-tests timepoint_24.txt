@@ -1,0 +1,29 @@
+log2_sdc1 blunt does not come from a normal distribution. 
+log2_sdc1 pen does not come from a normal distribution. 
+log2_timp1 blunt does not come from a normal distribution. 
+log2_timp1 pen does not come from a normal distribution. 
+log2_timp2 pen does not come from a normal distribution. 
+log2_timp4 blunt does not come from a normal distribution. 
+log2_timp4 pen does not come from a normal distribution. 
+
+
+T-test on: log2_sdc1
+T statistic: 2.7254031883778382
+p-value: 0.00666123499816748
+
+
+T-test on: log2_timp1
+T statistic: 5.383260286169536
+p-value: 1.1539639881359993e-07
+Meets threshold for statistical significance. 
+
+T-test on: log2_timp2
+T statistic: 4.266974249797584
+p-value: 2.3945601262685126e-05
+Meets threshold for statistical significance. 
+
+T-test on: log2_timp4
+T statistic: 4.368065419536157
+p-value: 1.5460952257949358e-05
+Meets threshold for statistical significance. 
+

@@ -67,12 +67,12 @@ suppressPackageStartupMessages(library("Hmisc"))
 suppressPackageStartupMessages(library("missMDA"))
 suppressPackageStartupMessages(library("vegan"))
 suppressPackageStartupMessages(library("pheatmap"))
+suppressPackageStartupMessages(library("data.table"))
+
 ```
 
 
-# Timepoint 0
-
-```{r import_df0, eval=TRUE, echo=FALSE}
+```{r pre, eval=TRUE}
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 #df2 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_2")
 #df4 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_4")
@@ -87,10 +87,6 @@ biomarker_cols <- df0[51:93] #df0[8:50]
 # biomarker_cols = df0[8:50]
 biomarkers = colnames(biomarker_cols)
 
-df_combined <- df0 %>%
-  filter(INJ_MECH != "Both Types of Injury") %>%
-  select(all_of(biomarkers))
-
 df0 <- df0 %>%
   filter(INJ_MECH != "Both Types of Injury") 
 
@@ -98,16 +94,15 @@ for (x in biomarkers) {
   if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
     df0[x] <- NULL
   }
-  if (sum(is.na(df_combined[x])) / nrow(df_combined[x]) > 0.2) {
-    df_combined[x] <- NULL
+  if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+    biomarker_cols[x] <- NULL
   }
 }
 
-biomarkers <- colnames(df_combined)
+biomarkers <- colnames(biomarker_cols)
 
 for (x in biomarkers) {
   df0[x] <- with(df0, impute(df0[x], mean))
-  df_combined[x] <- with(df_combined, impute(df_combined[x], mean))
 }
 
 for (x in biomarkers) {
@@ -115,11 +110,6 @@ for (x in biomarkers) {
 }
 
 
-
-```
-
-## Heatmap
-```{r d0_heatmap, eval=TRUE, echo=FALSE}
 std_cols <- c(227:262)
 std_biomarkers <- colnames(df0[std_cols])
 
@@ -140,8 +130,14 @@ all_mean_t <- transpose(all_mean)
 rownames(all_mean_t) <- colnames(all_mean)
 colnames(all_mean_t) <- c("Blunt", "Penetrating")
 
-# HEATMAP
 
+
+```
+
+
+# Heatmap
+```{r heatmap, eval=TRUE, echo=FALSE}
+# HEATMAP
 map <- pheatmap(
   all_mean_t,
   cluster_rows = FALSE, cluster_cols = FALSE,
@@ -152,31 +148,66 @@ map <- pheatmap(
 )
 ```
 
-## PCA
-```{r pca_df0, eval=TRUE, echo=FALSE}
+# PCA
+```{r pca, eval=TRUE, echo=FALSE}
+df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+df = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+biomarker_cols <- df0[51:93] #df0[8:50] 
+# biomarker_cols = df0[8:50]
+biomarkers = colnames(biomarker_cols)
 
-df_combined_std <- df_combined %>%
-  mutate_if(is.numeric, scale)
+for (x in biomarkers) {
+  if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+    df0[x] <- NULL
+  }
+  if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+    biomarker_cols[x] <- NULL
+  }
+}
 
-combined_pca = PCA(df_combined_std, graph = FALSE, ncp = 25)
+biomarkers <- colnames(biomarker_cols)
+
+for (x in biomarkers) {
+  df0[paste(x, "_zscore")] <- scale(df0[x])
+}
+
+std_cols <- c(227:262)
+std_biomarkers <- colnames(df0[std_cols])
+
+
+df0 <- df0 %>%
+  filter(INJ_MECH != "Both Types of Injury") %>%
+  select(all_of(std_biomarkers))
+
+df <- df %>%
+  filter(INJ_MECH != "Both Types of Injury")
+
+for (x in std_biomarkers) {
+  df0[x] <- with(df0, impute(df0[x], mean))
+}
+
+combined_pca = PCA(df0, graph = FALSE, ncp = 25)
 combined_eig_val <- get_eigenvalue(combined_pca)
 print(combined_eig_val) # 15 dimensions account for about 81% of variance.
 fviz_eig(combined_pca, addlabels = TRUE, ncp = 25)
 
 var_c <- get_pca_var(combined_pca)
-# print(var_c$contrib)
+print(var_c$contrib)
 fviz_contrib(combined_pca, choice = "var", axes = 1) # Red dashed line indicates the expected average contribution
 fviz_contrib(combined_pca, choice = "var", axes = 2)
+
 corrplot(var_c$contrib, is.corr=FALSE)
 
 fviz_pca_ind(combined_pca, 
              geom.ind = "point",
-             col.ind = df0$INJ_MECH,
+             #col.ind = df$INJ_MECH,
+             col.ind = df$INJ_MECH,
              addEllipses = TRUE,
              legend.title = "Injury Mechanism",
              )
 
-pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df0$INJ_MECH)
+pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df$INJ_MECH)
+
 ggpubr::ggpar(pca_graph_d0,
               title = "Principal Component Analysis",
               subtitle = "PROPPR data set",
@@ -186,14 +217,15 @@ ggpubr::ggpar(pca_graph_d0,
               )
 ```
 
-
-## K Means
-```{r kmeans_df0, eval=TRUE, echo=FALSE} 
-fviz_nbclust(df_combined_std, kmeans, method = "silhouette")
+#K Means
+```{r kmeans, eval=TRUE, echo=FALSE}
+fviz_nbclust(df0, kmeans, method = "silhouette")
 set.seed(42)
-km.res <- kmeans(df_combined_std, 2, nstart = 25)
-fviz_cluster(km.res, data = df_combined_std,
+km.res <- kmeans(df0, 2, nstart = 25)
+fviz_cluster(km.res, data = df0,
              elipse.type = "convex", palette = "jco", repel = TRUE,
-             ggtheme = theme_minimal(), geom = "point"
+             ggtheme = theme_minimal()
              )
+print(head(km.res$cluster))
+
 ```

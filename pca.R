@@ -32,12 +32,12 @@ for (x in biomarkers) {
   if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
     df0[x] <- NULL
   }
-  if (sum(is.na(df_combined[x])) / nrow(df_combined[x]) > 0.2) {
-    df_combined[x] <- NULL
+  if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+    biomarker_cols[x] <- NULL
   }
 }
 
-biomarkers <- colnames(df_combined)
+biomarkers <- colnames(biomarker_cols)
 
 for (x in biomarkers) {
   df0[x] <- with(df0, impute(df0[x], mean))

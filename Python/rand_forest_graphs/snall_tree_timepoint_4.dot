@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label="log2_timp1 <= 0.2\nmse = 0.2\nsamples = 278\nvalue = 1.5"] ;
+1 [label="log2_pap <= -1.0\nmse = 0.2\nsamples = 199\nvalue = 1.4"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="log2_Hu_IL_4__52 <= -2.9\nmse = 0.0\nsamples = 37\nvalue = 1.0"] ;
+1 -> 2 ;
+3 [label="mse = 0.0\nsamples = 1\nvalue = 2.0"] ;
+2 -> 3 ;
+4 [label="mse = 0.0\nsamples = 36\nvalue = 1.0"] ;
+2 -> 4 ;
+5 [label="log2_timp1 <= -0.4\nmse = 0.2\nsamples = 162\nvalue = 1.5"] ;
+1 -> 5 ;
+6 [label="mse = 0.2\nsamples = 63\nvalue = 1.3"] ;
+5 -> 6 ;
+7 [label="mse = 0.2\nsamples = 99\nvalue = 1.6"] ;
+5 -> 7 ;
+8 [label="log2_Hu_IP_10__48 <= -1.1\nmse = 0.1\nsamples = 79\nvalue = 1.9"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label="log2_sdc1 <= -0.5\nmse = 0.2\nsamples = 6\nvalue = 1.4"] ;
+8 -> 9 ;
+10 [label="mse = 0.0\nsamples = 2\nvalue = 2.0"] ;
+9 -> 10 ;
+11 [label="mse = 0.0\nsamples = 4\nvalue = 1.0"] ;
+9 -> 11 ;
+12 [label="log2_hmgb1 <= -0.8\nmse = 0.1\nsamples = 73\nvalue = 1.9"] ;
+8 -> 12 ;
+13 [label="mse = 0.2\nsamples = 5\nvalue = 1.5"] ;
+12 -> 13 ;
+14 [label="mse = 0.0\nsamples = 68\nvalue = 2.0"] ;
+12 -> 14 ;
+}

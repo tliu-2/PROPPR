@@ -1,0 +1,29 @@
+digraph Tree {
+node [shape=box, style="rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label="log2_rage <= -1.0\nmse = 0.2\nsamples = 268\nvalue = 1.5"] ;
+1 [label="log2_ang1 <= 2.4\nmse = 0.1\nsamples = 47\nvalue = 1.1"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="log2_Hu_Eotaxin__43 <= 2.2\nmse = 0.0\nsamples = 45\nvalue = 1.0"] ;
+1 -> 2 ;
+3 [label="mse = 0.0\nsamples = 44\nvalue = 1.0"] ;
+2 -> 3 ;
+4 [label="mse = 0.0\nsamples = 1\nvalue = 2.0"] ;
+2 -> 4 ;
+5 [label="mse = 0.0\nsamples = 2\nvalue = 2.0"] ;
+1 -> 5 ;
+6 [label="log2_hmgb1 <= -0.8\nmse = 0.2\nsamples = 221\nvalue = 1.6"] ;
+0 -> 6 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+7 [label="log2_pai1 <= 0.5\nmse = 0.1\nsamples = 31\nvalue = 1.2"] ;
+6 -> 7 ;
+8 [label="mse = 0.0\nsamples = 22\nvalue = 1.0"] ;
+7 -> 8 ;
+9 [label="mse = 0.2\nsamples = 9\nvalue = 1.5"] ;
+7 -> 9 ;
+10 [label="log2_pap <= -1.5\nmse = 0.2\nsamples = 190\nvalue = 1.6"] ;
+6 -> 10 ;
+11 [label="mse = 0.1\nsamples = 12\nvalue = 1.2"] ;
+10 -> 11 ;
+12 [label="mse = 0.2\nsamples = 178\nvalue = 1.7"] ;
+10 -> 12 ;
+}

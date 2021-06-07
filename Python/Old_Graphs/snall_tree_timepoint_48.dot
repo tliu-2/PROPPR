@@ -1,0 +1,29 @@
+digraph Tree {
+node [shape=box, style="rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label="log2_Hu_MCP_1_MCAF__53 <= 0.0\nmse = 0.2\nsamples = 275\nvalue = 1.5"] ;
+1 [label="log2_tpa <= -1.0\nmse = 0.2\nsamples = 178\nvalue = 1.4"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="log2_Hu_MIP_1b__18 <= -1.5\nmse = 0.0\nsamples = 18\nvalue = 1.0"] ;
+1 -> 2 ;
+3 [label="mse = 0.0\nsamples = 1\nvalue = 2.0"] ;
+2 -> 3 ;
+4 [label="mse = 0.0\nsamples = 17\nvalue = 1.0"] ;
+2 -> 4 ;
+5 [label="log2_Hu_IL_1ra__25 <= -1.5\nmse = 0.2\nsamples = 160\nvalue = 1.4"] ;
+1 -> 5 ;
+6 [label="mse = 0.0\nsamples = 11\nvalue = 1.0"] ;
+5 -> 6 ;
+7 [label="mse = 0.2\nsamples = 149\nvalue = 1.5"] ;
+5 -> 7 ;
+8 [label="log2_Hu_IL_13__51 <= -2.0\nmse = 0.2\nsamples = 97\nvalue = 1.7"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label="mse = 0.0\nsamples = 4\nvalue = 1.0"] ;
+8 -> 9 ;
+10 [label="log2_Hu_MIP_1b__18 <= 2.2\nmse = 0.2\nsamples = 93\nvalue = 1.8"] ;
+8 -> 10 ;
+11 [label="mse = 0.2\nsamples = 88\nvalue = 1.8"] ;
+10 -> 11 ;
+12 [label="mse = 0.0\nsamples = 5\nvalue = 1.0"] ;
+10 -> 12 ;
+}
