@@ -25,10 +25,6 @@ biomarker_cols <- df0[51:93] #df0[8:50]
 # biomarker_cols = df0[8:50]
 biomarkers = colnames(biomarker_cols)
 
-df_combined <- df0 %>%
-  filter(INJ_MECH != "Both Types of Injury") %>%
-  select(all_of(biomarkers))
-
 df0 <- df0 %>%
   filter(INJ_MECH != "Both Types of Injury") 
 
@@ -52,7 +48,6 @@ for (x in biomarkers) {
 }
 
 
-
 std_cols <- c(227:262)
 std_biomarkers <- colnames(df0[std_cols])
 
@@ -71,7 +66,9 @@ df_pen_mean <- df_pen %>%
 all_mean <- rbind(df_blunt_mean, df_pen_mean)
 all_mean_t <- transpose(all_mean)
 rownames(all_mean_t) <- colnames(all_mean)
-colnames(all_mean_t) <- rownames(all_mean)
+colnames(all_mean_t) <- c("Blunt", "Penetrating")
+
+# HEATMAP
 
 map <- pheatmap(
   all_mean_t,
@@ -82,58 +79,6 @@ map <- pheatmap(
   filename = "heatmap_inj_mech.png"
 )
 
-for (x in biomarkers) {
-  #df_blunt[x] <- with(df_blunt, impute(df_blunt[x], mean))
-  #df_pen[x] <- with(df_pen, impute(df_pen[x], mean))
-  df_combined[x] <- with(df_combined, impute(df_combined[x], mean))
-}
-
-df_combined_std <- df_combined %>%
-  mutate_if(is.numeric, scale)
-
-# HEATMAP
-
-df_blunt_std <- df_blunt_mean_t %>%
-  mutate_all(scale)
-
-df_pen_std <- df_pen_mean_t %>%
-  mutate_all(scale)
-
-pheatmap(
-  df_all_mean,
-  cluster_rows = FALSE, cluster_cols = FALSE,
-  cellwidth = 10,
-  cellheight = 10,
-  fontsize = 10,
-)
-
-df_blunt_mean <- df_blunt %>%
-  summarise_all(mean, na.rm = T)
-row.names(df_blunt_mean) <- "Blunt Injury Only"
-
-df_pen_mean <- df_pen %>%
-  summarise_all(mean, na.rm = T)
-row.names(df_pen_mean) <- "Penetrating Injury Only"
-
-df_blunt_mean_t <- transpose(df_blunt_mean)
-rownames(df_blunt_mean_t) <- colnames(df_blunt_mean)
-colnames(df_blunt_mean_t) <- rownames(df_blunt_mean)
-
-df_pen_mean_t <- transpose(df_pen_mean)
-rownames(df_pen_mean_t) <- colnames(df_pen_mean)
-colnames(df_pen_mean_t) <- rownames(df_pen_mean)
-
-
-
-df_all_mean <- cbind(df_blunt_mean_t, df_pen_mean_t)
-
-pheatmap(
-  df_all_mean,
-  cluster_rows = FALSE, cluster_cols = FALSE,
-  cellwidth = 10,
-  cellheight = 10,
-  fontsize = 10,
-)
 
 # PERMANOVA
 df_c_dist <- dist(df_combined_std, method = "euclidean")
@@ -148,12 +93,41 @@ plot(dispersion, hull=FALSE, ellipse = TRUE)
 
 
 # PCA
+df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+df = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+biomarker_cols <- df0[51:93] #df0[8:50] 
+# biomarker_cols = df0[8:50]
+biomarkers = colnames(biomarker_cols)
+
+for (x in biomarkers) {
+  if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+    df0[x] <- NULL
+  }
+  if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+    biomarker_cols[x] <- NULL
+  }
+}
+
+biomarkers <- colnames(biomarker_cols)
+
+for (x in biomarkers) {
+  df0[paste(x, "_zscore")] <- scale(df0[x])
+}
+
+std_cols <- c(227:262)
+std_biomarkers <- colnames(df0[std_cols])
+
+
 df0 <- df0 %>%
-  filter(INJ_MECH == "Blunt Injury Only") %>%
-  select(std_biomarkers)
+  filter(INJ_MECH != "Both Types of Injury") %>%
+  select(all_of(std_biomarkers))
 
 df <- df %>%
-  filter(INJ_MECH == "Blunt Injury Only")
+  filter(INJ_MECH != "Both Types of Injury")
+
+for (x in std_biomarkers) {
+  df0[x] <- with(df0, impute(df0[x], mean))
+}
 
 combined_pca = PCA(df0, graph = FALSE, ncp = 25)
 combined_eig_val <- get_eigenvalue(combined_pca)
@@ -174,7 +148,8 @@ fviz_pca_ind(combined_pca,
              legend.title = "Injury Mechanism",
              )
 
-pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df0$INJ_MECH)
+pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df$INJ_MECH)
+
 ggpubr::ggpar(pca_graph_d0,
               title = "Principal Component Analysis",
               subtitle = "PROPPR data set",
@@ -186,8 +161,8 @@ ggpubr::ggpar(pca_graph_d0,
 # K MEANS
 fviz_nbclust(df0, kmeans, method = "silhouette")
 set.seed(42)
-km.res <- kmeans(df_combined_std, 2, nstart = 25)
-fviz_cluster(km.res, data = df_combined_std,
+km.res <- kmeans(df0, 2, nstart = 25)
+fviz_cluster(km.res, data = df0,
              elipse.type = "convex", palette = "jco", repel = TRUE,
              ggtheme = theme_minimal()
              )

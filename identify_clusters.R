@@ -35,10 +35,19 @@ std_cols_cluster2 <- df %>%
 
 std1_mean <- std_cols_cluster1 %>%
   summarise_all(mean, na.rm = T)
+
+std1_mean_t <- transpose(std1_mean)
+colnames(std1_mean_t) <- "Cluster 1"
+rownames(std1_mean_t) <- colnames(std1_mean)
+
 std2_mean <- std_cols_cluster2 %>%
   summarise_all(mean, na.rm = T)
 
-all_mean <- rbind(std1_mean, std2_mean)
+std2_mean_t <- transpose(std2_mean)
+colnames(std2_mean_t) <- "Cluster 2"
+rownames(std2_mean_t) <- colnames(std2_mean)
+
+all_mean <- cbind(std1_mean_t, std2_mean_t)
 
 map <- pheatmap(
   all_mean,
