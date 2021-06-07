@@ -12,13 +12,13 @@ library(pheatmap)
 library(data.table)
 
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
-df2 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_2")
-df4 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_4")
-df6 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_6")
-df12 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_12")
-df24 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_24")
-df48 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_48")
-df72 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_72")
+#df2 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_2")
+#df4 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_4")
+#df6 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_6")
+#df12 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_12")
+#df24 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_24")
+#df48 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_48")
+#df72 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_72")
 
 # PREPROCESSING
 biomarker_cols <- df0[51:93] #df0[8:50] 
@@ -30,8 +30,7 @@ df_combined <- df0 %>%
   select(all_of(biomarkers))
 
 df0 <- df0 %>%
-  filter(INJ_MECH != "Both Types of Injury")
-
+  filter(INJ_MECH != "Both Types of Injury") 
 
 for (x in biomarkers) {
   if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
@@ -44,17 +43,48 @@ for (x in biomarkers) {
 
 biomarkers <- colnames(df_combined)
 
-df_blunt = df0 %>%
-  filter(INJ_MECH == "Blunt Injury Only") %>%
-  select(all_of(biomarkers))
-df_pen = df0 %>%
-  filter(INJ_MECH == "Penetrating Injury Only")%>%
-  select(all_of(biomarkers))
-
+for (x in biomarkers) {
+  df0[x] <- with(df0, impute(df0[x], mean))
+}
 
 for (x in biomarkers) {
-  df_blunt[x] <- with(df_blunt, impute(df_blunt[x], mean))
-  df_pen[x] <- with(df_pen, impute(df_pen[x], mean))
+  df0[paste(x, "_zscore")] <- scale(df0[x])
+}
+
+
+
+std_cols <- c(227:262)
+std_biomarkers <- colnames(df0[std_cols])
+
+df_blunt <- df0 %>%
+  filter(INJ_MECH == "Blunt Injury Only") %>%
+  select(all_of(std_biomarkers))
+df_pen <- df0 %>%
+  filter(INJ_MECH == "Penetrating Injury Only")%>%
+  select(all_of(std_biomarkers))
+
+df_blunt_mean <- df_blunt %>%
+  summarise_all(mean, na.rm = TRUE)
+df_pen_mean <- df_pen %>%
+  summarise_all(mean, na.rm = TRUE)
+
+all_mean <- rbind(df_blunt_mean, df_pen_mean)
+all_mean_t <- transpose(all_mean)
+rownames(all_mean_t) <- colnames(all_mean)
+colnames(all_mean_t) <- rownames(all_mean)
+
+map <- pheatmap(
+  all_mean_t,
+  cluster_rows = FALSE, cluster_cols = FALSE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "heatmap_inj_mech.png"
+)
+
+for (x in biomarkers) {
+  #df_blunt[x] <- with(df_blunt, impute(df_blunt[x], mean))
+  #df_pen[x] <- with(df_pen, impute(df_pen[x], mean))
   df_combined[x] <- with(df_combined, impute(df_combined[x], mean))
 }
 
@@ -62,6 +92,21 @@ df_combined_std <- df_combined %>%
   mutate_if(is.numeric, scale)
 
 # HEATMAP
+
+df_blunt_std <- df_blunt_mean_t %>%
+  mutate_all(scale)
+
+df_pen_std <- df_pen_mean_t %>%
+  mutate_all(scale)
+
+pheatmap(
+  df_all_mean,
+  cluster_rows = FALSE, cluster_cols = FALSE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+)
+
 df_blunt_mean <- df_blunt %>%
   summarise_all(mean, na.rm = T)
 row.names(df_blunt_mean) <- "Blunt Injury Only"
@@ -78,13 +123,9 @@ df_pen_mean_t <- transpose(df_pen_mean)
 rownames(df_pen_mean_t) <- colnames(df_pen_mean)
 colnames(df_pen_mean_t) <- rownames(df_pen_mean)
 
-df_blunt_std <- df_blunt_mean_t %>%
-  mutate_all(scale)
 
-df_pen_std <- df_pen_mean_t %>%
-  mutate_all(scale)
 
-df_all_mean <- cbind(df_blunt_std, df_pen_std)
+df_all_mean <- cbind(df_blunt_mean_t, df_pen_mean_t)
 
 pheatmap(
   df_all_mean,
@@ -107,7 +148,14 @@ plot(dispersion, hull=FALSE, ellipse = TRUE)
 
 
 # PCA
-combined_pca = PCA(df_combined_std, graph = FALSE, ncp = 25)
+df0 <- df0 %>%
+  filter(INJ_MECH == "Blunt Injury Only") %>%
+  select(std_biomarkers)
+
+df <- df %>%
+  filter(INJ_MECH == "Blunt Injury Only")
+
+combined_pca = PCA(df0, graph = FALSE, ncp = 25)
 combined_eig_val <- get_eigenvalue(combined_pca)
 print(combined_eig_val) # 15 dimensions account for about 81% of variance.
 fviz_eig(combined_pca, addlabels = TRUE, ncp = 25)
@@ -120,7 +168,8 @@ corrplot(var_c$contrib, is.corr=FALSE)
 
 fviz_pca_ind(combined_pca, 
              geom.ind = "point",
-             col.ind = df0$INJ_MECH,
+             #col.ind = df$INJ_MECH,
+             col.ind = df$INJ_MECH,
              addEllipses = TRUE,
              legend.title = "Injury Mechanism",
              )
@@ -135,10 +184,11 @@ ggpubr::ggpar(pca_graph_d0,
               )
 
 # K MEANS
-fviz_nbclust(df_combined_std, kmeans, method = "gap_stat")
+fviz_nbclust(df0, kmeans, method = "silhouette")
 set.seed(42)
 km.res <- kmeans(df_combined_std, 2, nstart = 25)
 fviz_cluster(km.res, data = df_combined_std,
              elipse.type = "convex", palette = "jco", repel = TRUE,
              ggtheme = theme_minimal()
              )
+print(head(km.res$cluster))

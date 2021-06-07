@@ -192,3 +192,235 @@ fviz_cluster(km.res, data = df_combined_std,
              ggtheme = theme_minimal(), geom = "point"
              )
 ```
+
+
+# Timepoint 2
+
+```{r import_df2, eval=TRUE, echo=FALSE}
+# import timepoint 0
+df = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_2")
+# PREPROCESSING
+biomarker_cols <- df[51:93] #df0[8:50] 
+# biomarker_cols = df0[8:50]
+biomarkers = colnames(biomarker_cols)
+
+df_combined <- df %>%
+  filter(INJ_MECH != "Both Types of Injury") %>%
+  select(all_of(biomarkers))
+
+df <- df %>%
+  filter(INJ_MECH != "Both Types of Injury")
+
+
+for (x in biomarkers) {
+  if (sum(is.na(df[x])) / nrow(df[x]) > 0.2) {
+    df[x] <- NULL
+  }
+  if (sum(is.na(df_combined[x])) / nrow(df_combined[x]) > 0.2) {
+    df_combined[x] <- NULL
+  }
+}
+
+biomarkers <- colnames(df_combined)
+
+df_blunt = df %>%
+  filter(INJ_MECH == "Blunt Injury Only") %>%
+  select(all_of(biomarkers))
+df_pen = df %>%
+  filter(INJ_MECH == "Penetrating Injury Only")%>%
+  select(all_of(biomarkers))
+
+
+for (x in biomarkers) {
+  df_blunt[x] <- with(df_blunt, impute(df_blunt[x], mean))
+  df_pen[x] <- with(df_pen, impute(df_pen[x], mean))
+  df_combined[x] <- with(df_combined, impute(df_combined[x], mean))
+}
+
+df_combined_std <- df_combined %>%
+  mutate_if(is.numeric, scale)
+
+```
+
+```{r pca_df2, eval=TRUE, echo=FALSE}
+combined_pca = PCA(df_combined_std, graph = FALSE, ncp = 25)
+combined_eig_val <- get_eigenvalue(combined_pca)
+print(combined_eig_val) # 15 dimensions account for about 81% of variance.
+fviz_eig(combined_pca, addlabels = TRUE, ncp = 25)
+
+var_c <- get_pca_var(combined_pca)
+# print(var_c$contrib)
+fviz_contrib(combined_pca, choice = "var", axes = 1) # Red dashed line indicates the expected average contribution
+fviz_contrib(combined_pca, choice = "var", axes = 2)
+corrplot(var_c$contrib, is.corr=FALSE)
+
+fviz_pca_ind(combined_pca, 
+             geom.ind = "point",
+             col.ind = df0$INJ_MECH,
+             addEllipses = TRUE,
+             legend.title = "Injury Mechanism",
+             )
+
+pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df0$INJ_MECH)
+ggpubr::ggpar(pca_graph_d0,
+              title = "Principal Component Analysis",
+              subtitle = "PROPPR data set",
+              xlab = "PC1", ylab = "PC2",
+              legend.title = "Injury Mechanism", legend.position = "top",
+              ggtheme = theme_gray()
+              )
+```
+
+# Timepoint 4
+
+```{r import_df4, eval=TRUE, echo=FALSE}
+# import timepoint 0
+df = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_4")
+# PREPROCESSING
+biomarker_cols <- df[51:93] #df0[8:50] 
+# biomarker_cols = df0[8:50]
+biomarkers = colnames(biomarker_cols)
+
+df_combined <- df %>%
+  filter(INJ_MECH != "Both Types of Injury") %>%
+  select(all_of(biomarkers))
+
+df <- df %>%
+  filter(INJ_MECH != "Both Types of Injury")
+
+
+for (x in biomarkers) {
+  if (sum(is.na(df[x])) / nrow(df[x]) > 0.2) {
+    df[x] <- NULL
+  }
+  if (sum(is.na(df_combined[x])) / nrow(df_combined[x]) > 0.2) {
+    df_combined[x] <- NULL
+  }
+}
+
+biomarkers <- colnames(df_combined)
+
+df_blunt = df %>%
+  filter(INJ_MECH == "Blunt Injury Only") %>%
+  select(all_of(biomarkers))
+df_pen = df %>%
+  filter(INJ_MECH == "Penetrating Injury Only")%>%
+  select(all_of(biomarkers))
+
+
+for (x in biomarkers) {
+  df_blunt[x] <- with(df_blunt, impute(df_blunt[x], mean))
+  df_pen[x] <- with(df_pen, impute(df_pen[x], mean))
+  df_combined[x] <- with(df_combined, impute(df_combined[x], mean))
+}
+
+df_combined_std <- df_combined %>%
+  mutate_if(is.numeric, scale)
+
+```
+
+```{r pca_df4, eval=TRUE, echo=FALSE}
+combined_pca = PCA(df_combined_std, graph = FALSE, ncp = 25)
+combined_eig_val <- get_eigenvalue(combined_pca)
+print(combined_eig_val) # 15 dimensions account for about 81% of variance.
+fviz_eig(combined_pca, addlabels = TRUE, ncp = 25)
+
+var_c <- get_pca_var(combined_pca)
+# print(var_c$contrib)
+fviz_contrib(combined_pca, choice = "var", axes = 1) # Red dashed line indicates the expected average contribution
+fviz_contrib(combined_pca, choice = "var", axes = 2)
+corrplot(var_c$contrib, is.corr=FALSE)
+
+fviz_pca_ind(combined_pca, 
+             geom.ind = "point",
+             col.ind = df0$INJ_MECH,
+             addEllipses = TRUE,
+             legend.title = "Injury Mechanism",
+             )
+
+pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df0$INJ_MECH)
+ggpubr::ggpar(pca_graph_d0,
+              title = "Principal Component Analysis",
+              subtitle = "PROPPR data set",
+              xlab = "PC1", ylab = "PC2",
+              legend.title = "Injury Mechanism", legend.position = "top",
+              ggtheme = theme_gray()
+              )
+```
+
+# Timepoint 6
+
+```{r import_df6, eval=TRUE, echo=FALSE}
+# import timepoint 0
+df = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_6")
+# PREPROCESSING
+biomarker_cols <- df[51:93] #df0[8:50] 
+# biomarker_cols = df0[8:50]
+biomarkers = colnames(biomarker_cols)
+
+df_combined <- df %>%
+  filter(INJ_MECH != "Both Types of Injury") %>%
+  select(all_of(biomarkers))
+
+df <- df %>%
+  filter(INJ_MECH != "Both Types of Injury")
+
+
+for (x in biomarkers) {
+  if (sum(is.na(df[x])) / nrow(df[x]) > 0.2) {
+    df[x] <- NULL
+  }
+  if (sum(is.na(df_combined[x])) / nrow(df_combined[x]) > 0.2) {
+    df_combined[x] <- NULL
+  }
+}
+
+biomarkers <- colnames(df_combined)
+
+df_blunt = df %>%
+  filter(INJ_MECH == "Blunt Injury Only") %>%
+  select(all_of(biomarkers))
+df_pen = df %>%
+  filter(INJ_MECH == "Penetrating Injury Only")%>%
+  select(all_of(biomarkers))
+
+
+for (x in biomarkers) {
+  df_blunt[x] <- with(df_blunt, impute(df_blunt[x], mean))
+  df_pen[x] <- with(df_pen, impute(df_pen[x], mean))
+  df_combined[x] <- with(df_combined, impute(df_combined[x], mean))
+}
+
+df_combined_std <- df_combined %>%
+  mutate_if(is.numeric, scale)
+
+```
+
+```{r pca_df6, eval=TRUE, echo=FALSE}
+combined_pca = PCA(df_combined_std, graph = FALSE, ncp = 25)
+combined_eig_val <- get_eigenvalue(combined_pca)
+print(combined_eig_val) # 15 dimensions account for about 81% of variance.
+fviz_eig(combined_pca, addlabels = TRUE, ncp = 25)
+
+var_c <- get_pca_var(combined_pca)
+# print(var_c$contrib)
+fviz_contrib(combined_pca, choice = "var", axes = 1) # Red dashed line indicates the expected average contribution
+fviz_contrib(combined_pca, choice = "var", axes = 2)
+corrplot(var_c$contrib, is.corr=FALSE)
+
+fviz_pca_ind(combined_pca, 
+             geom.ind = "point",
+             col.ind = df0$INJ_MECH,
+             addEllipses = TRUE,
+             legend.title = "Injury Mechanism",
+             )
+
+pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df0$INJ_MECH)
+ggpubr::ggpar(pca_graph_d0,
+              title = "Principal Component Analysis",
+              subtitle = "PROPPR data set",
+              xlab = "PC1", ylab = "PC2",
+              legend.title = "Injury Mechanism", legend.position = "top",
+              ggtheme = theme_gray()
+              )
+```
