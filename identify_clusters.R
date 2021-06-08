@@ -19,7 +19,7 @@ biomarker_cols <- df[52:94] #df0[8:50]
 biomarkers <- colnames(biomarker_cols)
 
 for (x in biomarkers) {
-  df[paste(x, "_zscore")] <- scale(df[x])
+  df[paste(substr(x, 5, nchar(x)))] <- scale(df[x])
 }
 
 col_n = c(252:294)
@@ -55,7 +55,7 @@ map <- pheatmap(
   cellwidth = 10,
   cellheight = 10,
   fontsize = 10,
-  filename = "heatmap.png"
+  filename = "R/heatmap.png"
 )
 
 
