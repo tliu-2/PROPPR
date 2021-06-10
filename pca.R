@@ -630,7 +630,7 @@ heirarch_cluster_sep <- function(df0) {
   
   return(list("blunt_plot" = heirarch_cluster_plot_b, 
               "pen_plot" = heirarch_cluster_plot_p, "df_b" = df_b, "df_p" = df_p,
-              "deno_b" = agg_cluster_b, "deno_p" = agg_cluster_p))
+              "dendro_b" = agg_cluster_b, "dendro_p" = agg_cluster_p))
   
 }
 
