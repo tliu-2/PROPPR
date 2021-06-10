@@ -12,13 +12,6 @@ library(pheatmap)
 library(data.table)
 
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
-#df2 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_2")
-#df4 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_4")
-#df6 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_6")
-#df12 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_12")
-#df24 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_24")
-#df48 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_48")
-#df72 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_72")
 
 # PREPROCESSING
 biomarker_cols <- df0[51:93] #df0[8:50] 
@@ -81,7 +74,7 @@ map <- pheatmap(
 
 
 # PERMANOVA
-df_c_dist <- dist(df_combined_std, method = "euclidean")
+df_c_dist <- dist(df0[std_biomarkers], method = "euclidean")
 set.seed(42)
 dif_c_div <- adonis2(df_c_dist~INJ_MECH, data=df0, permutations = 999, method="bray")
 print(dif_c_div)
@@ -142,10 +135,9 @@ corrplot(var_c$contrib, is.corr=FALSE)
 
 fviz_pca_ind(combined_pca, 
              geom.ind = "point",
-             #col.ind = df$INJ_MECH,
              col.ind = df$INJ_MECH,
              addEllipses = TRUE,
-             legend.title = "Injury Mechanism",
+             legend.title = "Injury Mechansim",
              )
 
 pca_graph_d0 <- fviz_pca_ind(combined_pca, geom.ind = "point", col.ind = df$INJ_MECH)

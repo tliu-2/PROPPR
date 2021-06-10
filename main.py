@@ -43,7 +43,7 @@ def rand_forest(df, t):
     f = open('rand_forest ' + t + '.txt', 'w')
     inj_col = df['INJ_MECH']
     # target_col = df['_30DAYST_SURV'] + 1
-    target_col = df['BLUNT_INJ'] + 1
+    target_col = df['SIRS'] + 1
     # biomarkers = range(7, 50)
     # selected_cols = list(df.iloc[:, 7:50])
     biomarkers_log = range(50, 93)
@@ -135,9 +135,9 @@ def rand_forest(df, t):
         plt.bar(x_val, y_importance, orientation='vertical')
         plt.xticks(x_val, x_features, rotation='vertical')
         plt.ylabel("Var Importance")
-        plt.title("Variable Importance in BLUNT_INJ " + t)
+        plt.title("Variable Importance in SIRS " + t)
         plt.tight_layout()
-        plt.savefig('var_importance/' + "Variable Importance BLUNT_INJ" + t + ".png")
+        plt.savefig('var_importance/' + "Variable Importance SIRS" + t + ".png")
         plt.close()
 
         f.close()
@@ -153,13 +153,13 @@ def pca_kmeans(df, t):
     """
     biomarkers_log = range(50, 93)
     selected_cols = list(df.iloc[:, biomarkers_log])
+    data = df[df['INJ_MECH'] == "Blunt Injury Only"]
     data = df[selected_cols]
 
     # These columns are dropped because more than 20% of their entries are empty.
     data, to_remove = remove_cols(data)
     for col in to_remove:
         selected_cols.remove(col)
-
     if not data.empty:
         # selected_cols.remove('log2_Hu_IL_2__38')
         # selected_cols.remove('log2_Hu_IL_15__73')
@@ -175,67 +175,68 @@ def pca_kmeans(df, t):
         imp = imp.fit(data)
         data = imp.transform(data)
 
+        # fig1_name = "Num Components " + t + ".png"
+        # # Determine how many compnents.
+        # plt.figure(figsize=(10, 8))
+        # plt.plot(range_data, pca.explained_variance_ratio_.cumsum(), marker='o', linestyle='--')
+        # plt.title("Explained Variance by Components " + t)
+        # plt.xlabel("Number of Components")
+        # plt.ylabel("Cumulative Explained Variance")
+        # plt.grid(True)
+        # plt.savefig('k-means_graphs/' + fig1_name)
+        # plt.close()
+
+        # if t == 'timepoint_24':
+        #     pca = PCA(n_components=2)
+        # else:
+        #     pca = PCA(n_components=15)
+
         # Standardize data.
         scalar = StandardScaler()
         std = scalar.fit_transform(data)
         # Fit the standardized data to PCA.
-        if t == 'timepoint_24':
-            pca = PCA(n_components=2)
-        else:
-            pca = PCA(n_components=15)
+        pca = PCA(n_components=15)
         pca.fit(std)
         scores_pca = pca.transform(std)
-        features = range(pca.n_components_)
 
-        fig1_name = "Num Components " + t + ".png"
-        # Determine how many compnents.
-        plt.figure(figsize=(10, 8))
-        plt.plot(range_data, pca.explained_variance_ratio_.cumsum(), marker='o', linestyle='--')
-        plt.title("Explained Variance by Components " + t)
-        plt.xlabel("Number of Components")
-        plt.ylabel("Cumulative Explained Variance")
-        plt.grid(True)
-        plt.savefig('k-means_graphs/' + fig1_name)
-        plt.close()
-
-
-        plt.figure(figsize=(10, 8))
-        plt.bar(features, pca.explained_variance_ratio_)
-        plt.xlabel('PCA Components')
-        plt.ylabel('Variance %')
-        plt.xticks(features)
-        plt.title('PCA Components and Variance ' + t)
-        plt.savefig('k-means_graphs/' + 'PCA Components Variance % ' + t + ".png")
-        plt.close()
-
-        fig2_name = "Number of Clusters " + t + ".png"
-        # Determine how many clusters.
-        wcss = []
-        for i in range(1, 21):
-            kmeans_pca = KMeans(n_clusters=i, init='k-means++', random_state=42)
-            kmeans_pca.fit(scores_pca)
-            wcss.append(kmeans_pca.inertia_)
-
-        plt.figure(figsize=(10, 8))
-        plt.grid(True)
-        plt.plot(range(1, 21), wcss, marker='o', linestyle='--')
-        plt.xlabel("Number of clusters")
-        plt.ylabel("WCSS")
-        plt.title("K-means with PCA Clustering " + t)
-        plt.xticks(range(1, 21))
-        plt.savefig('k-means_graphs/' + fig2_name)
-        plt.close()
-
-        fig3_name = "Silhouette Scores " + t + ".png"
-        # Silhouette Scores:
-        fig, ax = plt.subplots(2, 2, figsize=(15, 8))
-        for i in [2, 3, 4, 5]:
-            km = KMeans(n_clusters=i, init='k-means++', n_init=10, max_iter=100, random_state=42)
-            q, mod = divmod(i, 2)
-            visualizer = SilhouetteVisualizer(km, colors='yellowbrick', ax=ax[q - 1][mod])
-            visualizer.fit(std)
-        plt.savefig('k-means_graphs/' + fig3_name)
-        plt.close()
+        # features = range(pca.n_components_)
+        # plt.figure(figsize=(10, 8))
+        # plt.bar(features, pca.explained_variance_ratio_)
+        # plt.xlabel('PCA Components')
+        # plt.ylabel('Variance %')
+        # plt.xticks(features)
+        # plt.title('PCA Components and Variance ' + t)
+        # plt.savefig('k-means_graphs/' + 'PCA Components Variance % ' + t + ".png")
+        # plt.close()
+        #
+        # fig2_name = "Number of Clusters " + t + ".png"
+        # # Determine how many clusters.
+        # wcss = []
+        # for i in range(1, 21):
+        #     kmeans_pca = KMeans(n_clusters=i, init='k-means++', random_state=42)
+        #     kmeans_pca.fit(scores_pca)
+        #     wcss.append(kmeans_pca.inertia_)
+        #
+        # plt.figure(figsize=(10, 8))
+        # plt.grid(True)
+        # plt.plot(range(1, 21), wcss, marker='o', linestyle='--')
+        # plt.xlabel("Number of clusters")
+        # plt.ylabel("WCSS")
+        # plt.title("K-means with PCA Clustering " + t)
+        # plt.xticks(range(1, 21))
+        # plt.savefig('k-means_graphs/' + fig2_name)
+        # plt.close()
+        #
+        # fig3_name = "Silhouette Scores " + t + ".png"
+        # # Silhouette Scores:
+        # fig, ax = plt.subplots(2, 2, figsize=(15, 8))
+        # for i in [2, 3, 4, 5]:
+        #     km = KMeans(n_clusters=i, init='k-means++', n_init=10, max_iter=100, random_state=42)
+        #     q, mod = divmod(i, 2)
+        #     visualizer = SilhouetteVisualizer(km, colors='yellowbrick', ax=ax[q - 1][mod])
+        #     visualizer.fit(std)
+        # plt.savefig('k-means_graphs/' + fig3_name)
+        # plt.close()
 
         # Do k-means
         kmeans_pca = KMeans(n_clusters=2, init='k-means++', random_state=42)
@@ -258,27 +259,36 @@ def pca_kmeans(df, t):
         df_pca_kmeans['Clusters'] = df_pca_kmeans['K-means PCA'].map(
             {0: 'first', 1: 'second'})  # , 2: 'third', 3: 'fourth',
         # 4: 'fifth'})
-        df_pca_kmeans = df_pca_kmeans.sort_values('Clusters')
+        #df_pca_kmeans = df_pca_kmeans.sort_values('Clusters')
+        df_pca_kmeans.to_csv('kmeans_blunt_only.csv')
+
+        # cluster1 = df_pca_kmeans[df_pca_kmeans['Clusters'] == 'first']
+        # cluster2 = df_pca_kmeans[df_pca_kmeans['Clusters'] == 'second']
+        # columns = selected_cols
+        # index = ['First', 'Second']
+        # df_ = pd.DataFrame(index=index, columns=columns)
+        # df_ = df_.fillna(0)
+        # for x in selected_cols:
+        #     df_.loc['First'] = cluster1[[x]].mean(axis=0)
+        #
+        # print(df_.head())
+
+
 
         fig4_name = "K-Means Clustering with PCA " + t + ".png"
         # Plot data by PCA components
         x_axis = df_pca_kmeans['Component 0']
         y_axis = df_pca_kmeans['Component 1']
         plt.figure(figsize=(10, 8))
-        sns.scatterplot(x=x_axis, y=y_axis, hue=df_pca_kmeans['INJ_MECH'], style=df_pca_kmeans['Clusters'], palette='tab10')
+        sns.scatterplot(x=x_axis, y=y_axis, hue=df_pca_kmeans['INJ_MECH'], palette='tab10')
         plt.title("Clusters by PCA Components " + t)
         # handles, labels = plt.gca().get_legend_handles_labels()
         # order = [0, 1, 2, 3, 4, 5, 6]
         # plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
-        plt.savefig('k-means_graphs/' + fig4_name)
+        # plt.savefig('k-means_graphs/' + fig4_name)
+        plt.show()
         plt.close()
 
-        model = pca.fit(std)
-        X_pc = model.transform(std)
-        n_pcs = model.components_.shape[0]
-
-        most_important = [np.abs(model.components_[i]).argmax for i in range(n_pcs)]
-        initial_feature_names = selected_cols
 
 def compare_blunt_pen(df, t):
     """
@@ -408,10 +418,13 @@ if __name__ == "__main__":
     timepoints = ['timepoint_0', 'timepoint_2', 'timepoint_4', 'timepoint_6', 'timepoint_12', 'timepoint_24',
                   'timepoint_48', 'timepoint_72']
 
-    for t in timepoints:
-        df_org = pd.read_excel(org_data, t)
-        get_patient_make_up(df_org, t)
-        compare_blunt_pen(df_org, t)
-        pca_kmeans(df_org, t)
-        rand_forest(df_org, t)
-        print("Done with: ", t)
+    df_org = pd.read_excel(org_data, 'timepoint_0')
+    # pca_kmeans(df_org, 'timepoint_0')
+    # rand_forest(df_org, 'timepoint_0')
+    # for t in timepoints:
+    #     df_org = pd.read_excel(org_data, t)
+    #     get_patient_make_up(df_org, t)
+    #     compare_blunt_pen(df_org, t)
+    #     pca_kmeans(df_org, t)
+    #     rand_forest(df_org, t)
+    #     print("Done with: ", t)
