@@ -10,6 +10,8 @@ library(missMDA)
 library(vegan)
 library(pheatmap)
 library(data.table)
+library(cluster)
+library(dendextend)
 source("pca.R")
 
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
@@ -22,7 +24,7 @@ View(dataset_info$num_ards)
 View(dataset_info$num_death)
 View(dataset_info$num_gender_inj)
 
-res_list <- pca_plot(df0, df0)
+res_list <- pca_plot(df0)
 
 # View plots from function
 print(res_list$scree_plot)
@@ -36,6 +38,10 @@ print(kmeans_res$silhouette_plot)
 print(kmeans_res$kmeans_plot)
 
 # Conduct k-means clustering on only blunt and only penetrating injury.
-kmeans_cluster_res <- k_means_cluster_heatmap(df0)
-print(kmeans_cluster_res$Blunt)
-print(kmeans_cluster_res$Pen)
+kmeans_cluster_res <- k_means_sep(df0)
+print(kmeans_cluster_res$Blunt_Heat)
+print(kmeans_cluster_res$Pen_Heat)
+print(kmeans_cluster_res$Blunt_Cluster)
+print(kmeans_cluster_res$Pen_Cluster)
+
+

@@ -11,8 +11,50 @@ library(vegan)
 library(pheatmap)
 library(data.table)
 
+# Does a general preprocess for the passed dataframe. Standardizes and imputes
+# values. Only used in some cases where specific operations are not needed.
+# Takes in a dataframe as a parameter
+# Returns the modified dataframe.
+pre_process <- function(df0) {
+  # Pre-processing
+  biomarker_cols <- df0[51:93] #df0[8:50] 
+  # biomarker_cols = df0[8:50]
+  biomarkers = colnames(biomarker_cols)
+  
+  for (x in biomarkers) {
+    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+      df0[x] <- NULL
+    }
+    if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+      biomarker_cols[x] <- NULL
+    }
+  }
+  
+  biomarkers <- colnames(biomarker_cols)
+  
+  # Standardize data.
+  for (x in biomarkers) {
+    df0[paste(substr(x, 5, nchar(x)))] <- scale(df0[x])
+  }
+  
+  std_cols <- c(227:262)
+  std_biomarkers <- colnames(df0[std_cols])
+  
+  
+  df0 <- df0 %>%
+    filter(INJ_MECH != "Both Types of Injury") %>%
+    select(all_of(std_biomarkers))
+  
+  # Impute missing values.
+  for (x in std_biomarkers) {
+    df0[x] <- with(df0, impute(df0[x], mean))
+  }
+  return(df0)
+}
+
 # Function that creates variables that hold counts for type of injury, 30 day
 # survival, and complications. Perform chi square on living and dead.
+# Takes in a dataframe of patient data.
 # Returns a list of dataframes containing the number of patients with
 # complications, death counts, and gender.
 count_data <- function(df0) {
@@ -90,9 +132,10 @@ count_data <- function(df0) {
 # Function that takes two copies of the dataframe that a pca plot will be 
 # Generated from. Parameters do not need to be pre-processed. Function will
 # standardize and impute values.
+# Takes in a dataframe of patient data.
 # Returns a list containing the various graphs generated.
-pca_plot <- function(df0, df) {
-
+pca_plot <- function(df0) {
+  df <- df0
   # Pre-processing
   biomarker_cols <- df0[51:93] #df0[8:50] 
   # biomarker_cols = df0[8:50]
@@ -169,40 +212,7 @@ pca_plot <- function(df0, df) {
 # Returns a list containing the k-means plot and silhouette scores plot.
 k_means <- function(df0){
   
-  # Pre-processing
-  biomarker_cols <- df0[51:93] #df0[8:50] 
-  # biomarker_cols = df0[8:50]
-  biomarkers = colnames(biomarker_cols)
-  
-  for (x in biomarkers) {
-    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
-      df0[x] <- NULL
-    }
-    if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
-      biomarker_cols[x] <- NULL
-    }
-  }
-  
-  biomarkers <- colnames(biomarker_cols)
-  
-  # Standardize data.
-  for (x in biomarkers) {
-    df0[paste(substr(x, 5, nchar(x)))] <- scale(df0[x])
-  }
-  
-  std_cols <- c(227:262)
-  std_biomarkers <- colnames(df0[std_cols])
-  
-  
-  df0 <- df0 %>%
-    filter(INJ_MECH != "Both Types of Injury") %>%
-    select(all_of(std_biomarkers))
-  
-  # Impute missing values.
-  for (x in std_biomarkers) {
-    df0[x] <- with(df0, impute(df0[x], mean))
-  }
-  
+  df0 <- pre_process(df0)
   # K MEANS
   sil_plot <- fviz_nbclust(df0, kmeans, method = "silhouette")
   set.seed(42)
@@ -214,39 +224,13 @@ k_means <- function(df0){
   return(list("kmeans_plot" = kmeans_plot, "silhouette_plot" = sil_plot))
 }
 
+
 # Function that takes a dataframe and generates heatmaps based on injury
 # mechanism and death. Standardizes and imputes data as part of the function.
 # Saves heatmaps to disk.
 gen_heatmaps <- function(df0) {
-  # PREPROCESSING
-  biomarker_cols <- df0[51:93] #df0[8:50] 
-  # biomarker_cols = df0[8:50]
-  biomarkers = colnames(biomarker_cols)
   
-  df0 <- df0 %>%
-    filter(INJ_MECH != "Both Types of Injury") 
-  
-  for (x in biomarkers) {
-    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
-      df0[x] <- NULL
-    }
-    if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
-      biomarker_cols[x] <- NULL
-    }
-  }
-  
-  biomarkers <- colnames(biomarker_cols)
-  
-  for (x in biomarkers) {
-    df0[x] <- with(df0, impute(df0[x], mean))
-  }
-  
-  for (x in biomarkers) {
-    df0[paste(substr(x, 5, nchar(x)))] <- scale(df0[x])
-  }
-  
-  std_cols <- c(227:262)
-  std_biomarkers <- colnames(df0[std_cols])
+  df0 <- pre_process(df0)
   
   df_blunt <- df0 %>%
     filter(INJ_MECH == "Blunt Injury Only") %>%
@@ -379,7 +363,7 @@ permanova <- function(df0) {
 # and performs k-means clustering on patients of only one injury type.
 # Returns a list containing a heatmaps for blunt and one for penetrating
 # injury biomarker expression.
-k_means_cluster_heatmap <- function(df) {
+k_means_sep <- function(df0) {
   # PREPROCESSING
   biomarker_cols <- df0[51:93] #df0[8:50] 
   # biomarker_cols = df0[8:50]
@@ -427,7 +411,7 @@ k_means_cluster_heatmap <- function(df) {
   fviz_nbclust(df_blunt, kmeans, method = "silhouette")
   set.seed(42)
   km.res_blunt <- kmeans(df_blunt, 2, nstart = 25)
-  fviz_cluster(km.res_blunt, data = df_blunt,
+  b_cluster <- fviz_cluster(km.res_blunt, data = df_blunt,
                elipse.type = "convex", palette = "jco", repel = TRUE,
                ggtheme = theme_minimal()
   )
@@ -460,7 +444,7 @@ k_means_cluster_heatmap <- function(df) {
   fviz_nbclust(df_blunt, kmeans, method = "silhouette")
   set.seed(42)
   km.res_pen <- kmeans(df_pen, 2, nstart = 25)
-  fviz_cluster(km.res_pen, data = df_pen,
+  p_cluster <- fviz_cluster(km.res_pen, data = df_pen,
                elipse.type = "convex", palette = "jco", repel = TRUE,
                ggtheme = theme_minimal()
   )
@@ -488,9 +472,49 @@ k_means_cluster_heatmap <- function(df) {
     fontsize = 10,
   )
   
-  return(list("Blunt" = cluster_heatmap_b, "Pen" = cluster_heatmap_p))
+  return(list("Blunt_Heat" = cluster_heatmap_b, "Pen_Heat" = cluster_heatmap_p,
+              "Blunt_Cluster" = b_cluster, "Pen_Cluster" = p_cluster))
 }
 
 
+heirarch_cluster <- function(df0) {
+  
+  biomarker_cols <- df0[51:93] #df0[8:50] 
+  # biomarker_cols = df0[8:50]
+  biomarkers = colnames(biomarker_cols)
+  
+  df0 <- df0 %>%
+    filter(INJ_MECH != "Both Types of Injury") 
+  
+  for (x in biomarkers) {
+    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+      df0[x] <- NULL
+    }
+    if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+      biomarker_cols[x] <- NULL
+    }
+  }
+  
+  biomarkers <- colnames(biomarker_cols)
+  
+  # Impute missing values.
+  for (x in biomarkers) {
+    df0[x] <- with(df0, impute(df0[x], mean))
+  }
+  df0 <- df0 %>%
+    select(all_of(biomarkers))
+  
+  d <- dist(df0, method="euclidean")
+  hcl <- hclust(d, method="complete")
+  agg_cluster <- plot(hcl, cex = 0.6, hang = -1)
+  
+  hc5 <- hclust(d, method="ward.D2")
+  sub_grp <- cutree(hc5, k = 2)
+  #grouped_plot <- plot(hc5, cex = 0.6)
+  #rect.hclust(hc5, k = 2, border = 2:5)
+  
+  heirarch_cluster_plot <- fviz_cluster(list(data = df0, cluster = sub_grp))
+  return(list("agglomerative" = agg_cluster, "cluster_plot" = heirarch_cluster_plot))
+}
 
 
