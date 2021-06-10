@@ -44,4 +44,9 @@ print(kmeans_cluster_res$Pen_Heat)
 print(kmeans_cluster_res$Blunt_Cluster)
 print(kmeans_cluster_res$Pen_Cluster)
 
+heirarch_res <- heirarch_cluster(df0)
+print(heirarch_res$cluster_plot)
 
+heirarch_sep_res <- heirarch_cluster_sep(df0)
+print(heirarch_sep_res$blunt_plot)
+print(heirarch_sep_res$pen_plot)

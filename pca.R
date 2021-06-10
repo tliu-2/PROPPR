@@ -501,6 +501,7 @@ heirarch_cluster <- function(df0) {
   for (x in biomarkers) {
     df0[x] <- with(df0, impute(df0[x], mean))
   }
+  
   df0 <- df0 %>%
     select(all_of(biomarkers))
   
@@ -517,4 +518,71 @@ heirarch_cluster <- function(df0) {
   return(list("agglomerative" = agg_cluster, "cluster_plot" = heirarch_cluster_plot))
 }
 
+heirarch_cluster_sep <- function(df0) {
+  # PREPROCESSING
+  biomarker_cols <- df0[51:93] #df0[8:50] 
+  # biomarker_cols = df0[8:50]
+  biomarkers = colnames(biomarker_cols)
+  
+  df0 <- df0 %>%
+    filter(INJ_MECH != "Both Types of Injury") 
+  
+  for (x in biomarkers) {
+    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+      df0[x] <- NULL
+    }
+    if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+      biomarker_cols[x] <- NULL
+    }
+  }
+  
+  biomarkers <- colnames(biomarker_cols)
+  
+  # Impute missing values.
+  for (x in biomarkers) {
+    df0[x] <- with(df0, impute(df0[x], mean))
+  }
+  
+  # Divide based on injury mechanism
+  
+  df_blunt <- df0 %>%
+    filter(INJ_MECH == "Blunt Injury Only") %>%
+    select(all_of(biomarkers))
+  df_pen <- df0 %>%
+    filter(INJ_MECH == "Penetrating Injury Only")%>%
+    select(all_of(biomarkers))
+  
+  for (x in biomarkers) {
+    df_blunt[paste(substr(x, 5, nchar(x)))] <- scale(df_blunt[x])
+    df_pen[paste(substr(x, 5, nchar(x)))] <- scale(df_pen[x])
+  }
+  
+  std_cols <- c(37:72)
+  std_biomarkers <- colnames(df_blunt[std_cols])
+  df_blunt <- df_blunt[std_cols]
+  df_pen <- df_pen[std_cols]
+  
+  # Blunt
+  d_b <- dist(df_blunt, method="euclidean")
+  hcl_b <- hclust(d_b, method="complete")
+  agg_cluster_b <- plot(hcl_b, cex = 0.6, hang = -1)
+  
+  hc5_b <- hclust(d_b, method="ward.D2")
+  sub_grp_b <- cutree(hc5_b, k = 2)
+  
+  heirarch_cluster_plot_b <- fviz_cluster(list(data = df_blunt, cluster = sub_grp_b))
+  
+  # Penetrating
+  d_p <- dist(df_pen, method="euclidean")
+  hcl_p <- hclust(d_p, method="complete")
+  agg_cluster_p <- plot(hcl_p, cex = 0.6, hang = -1)
+  
+  hc5_p <- hclust(d_p, method="ward.D2")
+  sub_grp_p <- cutree(hc5_p, k = 2)
+  
+  heirarch_cluster_plot_p <- fviz_cluster(list(data = df_pen, cluster = sub_grp_p))
+  
+  return(list("blunt_plot" = heirarch_cluster_plot_b, "pen_plot" = heirarch_cluster_plot_p))
+  
+}
 
