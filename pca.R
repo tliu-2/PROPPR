@@ -31,6 +31,10 @@ pre_process <- function(df0) {
   }
   
   biomarkers <- colnames(biomarker_cols)
+  # Impute missing values.
+  for (x in biomarker) {
+    df0[x] <- with(df0, impute(df0[x], mean))
+  }
   
   # Standardize data.
   for (x in biomarkers) {
@@ -45,10 +49,6 @@ pre_process <- function(df0) {
     filter(INJ_MECH != "Both Types of Injury") %>%
     select(all_of(std_biomarkers))
   
-  # Impute missing values.
-  for (x in std_biomarkers) {
-    df0[x] <- with(df0, impute(df0[x], mean))
-  }
   return(df0)
 }
 
@@ -121,12 +121,49 @@ count_data <- function(df0) {
     group_by(female1) %>%
     summarise(Mean_Age = mean(AGE, na.rm = TRUE))
   
+  
   return(list("chi_sq" = chisq, "num_sepsis" = df_res_sepsis, 
               "num_death" = df_res_death, "num_ards" = df_res_ards, 
               "num_res_sirs" = df_res_sirs, "num_gender" = df_male_female,
               "num_gender_inj" = df_gender_inj, 
-              "mean_age_gender" = df_demographics))
+              "mean_age_gender" = df_demographics, "num_inj_type" = df_inj_type))
   
+}
+
+get_table1_data <- function(df0) {
+  df0 <- df0 %>%
+    filter(INJ_MECH != "Both Types of Injury")
+  
+  df_age_all <- df0 %>%
+    select(AGE)
+  
+  df_age_mean <- mean(df_age_all$AGE, na.rm=T)
+  df_age_sd <- sd(df_age_all$AGE, na.rm=T)
+  
+  df_blunt_age <- df0 %>%
+    filter(INJ_MECH == "Blunt Injury Only") %>%
+    select(AGE)
+  
+  df_blunt_age_mean <- mean(df_blunt_age$AGE, na.rm=T)
+  df_blunt_age_sd <- sd(df_blunt_age$AGE, na.rm=T)
+  
+  df_pen_age <- df0 %>%
+    filter(INJ_MECH == "Penetrating Injury Only") %>%
+    select(AGE)
+  
+  df_pen_age_mean <- mean(df_pen_age$AGE, na.rm=T)
+  df_pen_age_sd <- sd(df_pen_age$AGE, na.rm=T)
+  
+  
+  df_num_sex <- df0 %>%
+    group_by(INJ_MECH) %>%
+    count(female1)
+  
+  return(list("all_age_mean" = df_age_mean, "all_age_sd" = df_age_sd,
+              "blunt_age_mean" = df_blunt_age_mean, "blunt_age_sd" = df_blunt_age_sd,
+              "pen_age_mean" = df_pen_age_mean, "pen_age_sd" = df_pen_age_sd,
+              "num_sex" = df_num_sex))
+    
 }
 
 # Function that takes two copies of the dataframe that a pca plot will be 
@@ -152,6 +189,11 @@ pca_plot <- function(df0) {
   
   biomarkers <- colnames(biomarker_cols)
   
+  # Impute missing values.
+  for (x in biomarkers) {
+    df0[x] <- with(df0, impute(df0[x], mean))
+  }
+  
   # Standardize data.
   for (x in biomarkers) {
     df0[paste(substr(x, 5, nchar(x)))] <- scale(df0[x])
@@ -167,11 +209,6 @@ pca_plot <- function(df0) {
   
   df <- df %>%
     filter(INJ_MECH != "Both Types of Injury")
-  
-  # Impute missing values.
-  for (x in std_biomarkers) {
-    df0[x] <- with(df0, impute(df0[x], mean))
-  }
   
   # Make PCA plot.
   combined_pca = PCA(df0, graph = FALSE, ncp = 25)
@@ -564,25 +601,117 @@ heirarch_cluster_sep <- function(df0) {
   
   # Blunt
   d_b <- dist(df_blunt, method="euclidean")
-  hcl_b <- hclust(d_b, method="complete")
-  agg_cluster_b <- plot(hcl_b, cex = 0.6, hang = -1)
+  hc1_b <- hclust(d_b, method="complete")
+  plot(hc1_b, cex = 0.6, hang = -1)
+  agg_cluster_b <- recordPlot()
+  
   
   hc5_b <- hclust(d_b, method="ward.D2")
   sub_grp_b <- cutree(hc5_b, k = 2)
   
   heirarch_cluster_plot_b <- fviz_cluster(list(data = df_blunt, cluster = sub_grp_b))
+  df_b <- df0 %>%
+    filter(INJ_MECH == "Blunt Injury Only") %>%
+    mutate(cluster = sub_grp_b)
   
   # Penetrating
   d_p <- dist(df_pen, method="euclidean")
-  hcl_p <- hclust(d_p, method="complete")
-  agg_cluster_p <- plot(hcl_p, cex = 0.6, hang = -1)
+  hc1_p <- hclust(d_p, method="complete")
+  plot(hc1_p, cex = 0.6, hang = -1)
+  agg_cluster_p <- recordPlot()
   
   hc5_p <- hclust(d_p, method="ward.D2")
   sub_grp_p <- cutree(hc5_p, k = 2)
   
   heirarch_cluster_plot_p <- fviz_cluster(list(data = df_pen, cluster = sub_grp_p))
+  df_p <- df0 %>%
+    filter(INJ_MECH == "Penetrating Injury Only") %>%
+    mutate(cluster = sub_grp_p)
   
-  return(list("blunt_plot" = heirarch_cluster_plot_b, "pen_plot" = heirarch_cluster_plot_p))
+  return(list("blunt_plot" = heirarch_cluster_plot_b, 
+              "pen_plot" = heirarch_cluster_plot_p, "df_b" = df_b, "df_p" = df_p,
+              "deno_b" = agg_cluster_b, "deno_p" = agg_cluster_p))
   
 }
 
+cluster_heatmap <- function(df_b, df_p) {
+ 
+  # Pre-processing
+  biomarker_cols <- df0[51:93] #df0[8:50] 
+  # biomarker_cols = df0[8:50]
+  biomarkers = colnames(biomarker_cols)
+  
+  for (x in biomarkers) {
+    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+      df_b[x] <- NULL
+      df_p[x] <- NULL
+    }
+    if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+      biomarker_cols[x] <- NULL
+    }
+  }
+  
+  biomarkers <- colnames(biomarker_cols)
+  
+  # Impute missing values.
+  for (x in biomarkers) {
+    df_b[x] <- with(df_b, impute(df_b[x], mean))
+    df_p[x] <- with(df_p, impute(df_p[x], mean))
+  } 
+  
+  # Standardize data.
+  for (x in biomarkers) {
+    df_b[paste(substr(x, 5, nchar(x)))] <- scale(df_b[x])
+    df_p[paste(substr(x, 5, nchar(x)))] <- scale(df_p[x])
+  }
+  
+  std_cols <- c(228:263)
+  std_biomarkers <- colnames(df_b[std_cols])
+  
+  df_b_1 <- df_b %>%
+    filter(cluster == 1) %>%
+    select(all_of(std_biomarkers)) %>%
+    summarise_all(mean, na.rm=T)
+  df_b_2 <- df_b %>%
+    filter(cluster == 2) %>%
+    select(all_of(std_biomarkers)) %>%
+    summarise_all(mean, na.rm=T)
+  
+  df_p_1 <- df_p %>%
+    filter(cluster == 1) %>%
+    select(all_of(std_biomarkers)) %>%
+    summarise_all(mean, na.rm=T)
+  df_p_2 <- df_p %>%
+    filter(cluster == 2) %>%
+    select(all_of(std_biomarkers)) %>%
+    summarise_all(mean, na.rm=T)
+  
+  df_b_all <- rbind(df_b_1, df_b_2)
+  df_b_all_t <- transpose(df_b_all)
+  rownames(df_b_all_t) <- colnames(df_b_all)
+  colnames(df_b_all_t) <- rownames(df_b_all)
+  
+  df_p_all <- rbind(df_p_1, df_p_2)
+  df_p_all_t <- transpose(df_p_all)
+  rownames(df_p_all_t) <- colnames(df_p_all)
+  colnames(df_p_all_t) <- rownames(df_p_all)
+  
+  map_b <- pheatmap(
+    df_b_all_t,
+    cluster_rows = FALSE, cluster_cols = FALSE,
+    cellwidth = 10,
+    cellheight = 10,
+    fontsize = 10
+  )
+  
+  map_p <- pheatmap(
+    df_p_all_t,
+    cluster_rows = FALSE, cluster_cols = FALSE,
+    cellwidth = 10,
+    cellheight = 10,
+    fontsize = 10
+  )
+  
+  return(list("mapb" = map_b, "mapp" = map_p)) 
+  
+}

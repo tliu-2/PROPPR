@@ -18,11 +18,23 @@ df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = 
 
 dataset_info <- count_data(df0)
 # View / print out dataframes.
+View(dataset_info$mean_age_gender)
 View(dataset_info$num_gender)
 View(dataset_info$num_sepsis)
 View(dataset_info$num_ards)
 View(dataset_info$num_death)
 View(dataset_info$num_gender_inj)
+View(dataset_info$num_inj_type)
+
+
+table1_data <- get_table1_data(df0)
+print(table1_data$all_age_mean)
+print(table1_data$all_age_sd)
+print(table1_data$blunt_age_mean)
+print(table1_data$blunt_age_sd)
+print(table1_data$pen_age_mean)
+print(table1_data$pen_age_sd)
+print(table1_data$num_sex)
 
 res_list <- pca_plot(df0)
 
@@ -50,3 +62,9 @@ print(heirarch_res$cluster_plot)
 heirarch_sep_res <- heirarch_cluster_sep(df0)
 print(heirarch_sep_res$blunt_plot)
 print(heirarch_sep_res$pen_plot)
+
+df_b <- heirarch_sep_res$df_b
+df_p <- heirarch_sep_res$df_p
+cluster_res <- cluster_heatmap(df_b, df_p)
+print(cluster_res$mapb)
+print(cluster_res$mapp)
