@@ -544,15 +544,17 @@ heirarch_cluster <- function(df0) {
   
   d <- dist(df0, method="euclidean")
   hcl <- hclust(d, method="complete")
-  agg_cluster <- plot(hcl, cex = 0.6, hang = -1)
+
+  plot(hcl, cex = 0.6, hang = -1)
   
   hc5 <- hclust(d, method="ward.D2")
   sub_grp <- cutree(hc5, k = 2)
-  #grouped_plot <- plot(hc5, cex = 0.6)
-  #rect.hclust(hc5, k = 2, border = 2:5)
+  grouped_plot <- plot(hc5, cex = 0.6)
+  rect.hclust(hc5, k = 2, border = 2:5)
+  plot_cluster <- recordPlot()
   
   heirarch_cluster_plot <- fviz_cluster(list(data = df0, cluster = sub_grp))
-  return(list("agglomerative" = agg_cluster, "cluster_plot" = heirarch_cluster_plot))
+  return(list("dendro" = plot_cluster, "cluster_plot" = heirarch_cluster_plot))
 }
 
 heirarch_cluster_sep <- function(df0) {
@@ -603,13 +605,13 @@ heirarch_cluster_sep <- function(df0) {
   d_b <- dist(df_blunt, method="euclidean")
   hc1_b <- hclust(d_b, method="complete")
   plot(hc1_b, cex = 0.6, hang = -1)
+  # rect.hclust(hc1_b, k = 2, border = 2:5)
+  sub_grp_b <- cutree(hc1_b, k = 2)
   agg_cluster_b <- recordPlot()
   
   
-  hc5_b <- hclust(d_b, method="ward.D2")
-  sub_grp_b <- cutree(hc5_b, k = 2)
-  
   heirarch_cluster_plot_b <- fviz_cluster(list(data = df_blunt, cluster = sub_grp_b))
+  
   df_b <- df0 %>%
     filter(INJ_MECH == "Blunt Injury Only") %>%
     mutate(cluster = sub_grp_b)
@@ -618,19 +620,21 @@ heirarch_cluster_sep <- function(df0) {
   d_p <- dist(df_pen, method="euclidean")
   hc1_p <- hclust(d_p, method="complete")
   plot(hc1_p, cex = 0.6, hang = -1)
+  # rect.hclust(hc1_p, k = 2, border = 2:5)
+  sub_grp_p <- cutree(hc1_p, k = 2)
   agg_cluster_p <- recordPlot()
   
-  hc5_p <- hclust(d_p, method="ward.D2")
-  sub_grp_p <- cutree(hc5_p, k = 2)
+  #rect.hclust(hc5_p, k = 2, border = 2:5)
   
   heirarch_cluster_plot_p <- fviz_cluster(list(data = df_pen, cluster = sub_grp_p))
+  
   df_p <- df0 %>%
     filter(INJ_MECH == "Penetrating Injury Only") %>%
     mutate(cluster = sub_grp_p)
   
   return(list("blunt_plot" = heirarch_cluster_plot_b, 
               "pen_plot" = heirarch_cluster_plot_p, "df_b" = df_b, "df_p" = df_p,
-              "dendro_b" = agg_cluster_b, "dendro_p" = agg_cluster_p))
+              "dendro_b_agg" = agg_cluster_b, "dendro_p_agg" = agg_cluster_p))
   
 }
 

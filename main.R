@@ -62,11 +62,16 @@ print(heirarch_res$cluster_plot)
 heirarch_sep_res <- heirarch_cluster_sep(df0)
 print(heirarch_sep_res$blunt_plot)
 print(heirarch_sep_res$pen_plot)
-heirarch_sep_res$dendro_b
-heirarch_sep_res$dendro_p
+heirarch_sep_res$dendro_b_agg
+heirarch_sep_res$dendro_p_agg
 
 df_b <- heirarch_sep_res$df_b
 df_p <- heirarch_sep_res$df_p
+
+df_b %>%
+  select(cluster) %>%
+  count(cluster)
+
 cluster_res <- cluster_heatmap(df_b, df_p)
 print(cluster_res$mapb)
 print(cluster_res$mapp)
