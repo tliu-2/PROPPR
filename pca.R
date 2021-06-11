@@ -514,7 +514,7 @@ k_means_sep <- function(df0) {
 }
 
 
-heirarch_cluster <- function(df0) {
+hierarch_cluster <- function(df0) {
   
   biomarker_cols <- df0[51:93] #df0[8:50] 
   # biomarker_cols = df0[8:50]
@@ -553,11 +553,11 @@ heirarch_cluster <- function(df0) {
   rect.hclust(hc5, k = 2, border = 2:5)
   plot_cluster <- recordPlot()
   
-  heirarch_cluster_plot <- fviz_cluster(list(data = df0, cluster = sub_grp))
-  return(list("dendro" = plot_cluster, "cluster_plot" = heirarch_cluster_plot))
+  hierarch_cluster_plot <- fviz_cluster(list(data = df0, cluster = sub_grp))
+  return(list("dendro" = plot_cluster, "cluster_plot" = hierarch_cluster_plot))
 }
 
-heirarch_cluster_sep <- function(df0) {
+hierarch_cluster_sep <- function(df0) {
   # PREPROCESSING
   biomarker_cols <- df0[51:93] #df0[8:50] 
   # biomarker_cols = df0[8:50]
@@ -610,7 +610,7 @@ heirarch_cluster_sep <- function(df0) {
   agg_cluster_b <- recordPlot()
   
   
-  heirarch_cluster_plot_b <- fviz_cluster(list(data = df_blunt, cluster = sub_grp_b))
+  hierarch_cluster_plot_b <- fviz_cluster(list(data = df_blunt, cluster = sub_grp_b))
   
   df_b <- df0 %>%
     filter(INJ_MECH == "Blunt Injury Only") %>%
@@ -626,14 +626,14 @@ heirarch_cluster_sep <- function(df0) {
   
   #rect.hclust(hc5_p, k = 2, border = 2:5)
   
-  heirarch_cluster_plot_p <- fviz_cluster(list(data = df_pen, cluster = sub_grp_p))
+  hierarch_cluster_plot_p <- fviz_cluster(list(data = df_pen, cluster = sub_grp_p))
   
   df_p <- df0 %>%
     filter(INJ_MECH == "Penetrating Injury Only") %>%
     mutate(cluster = sub_grp_p)
   
-  return(list("blunt_plot" = heirarch_cluster_plot_b, 
-              "pen_plot" = heirarch_cluster_plot_p, "df_b" = df_b, "df_p" = df_p,
+  return(list("blunt_plot" = hierarch_cluster_plot_b, 
+              "pen_plot" = hierarch_cluster_plot_p, "df_b" = df_b, "df_p" = df_p,
               "dendro_b_agg" = agg_cluster_b, "dendro_p_agg" = agg_cluster_p))
   
 }

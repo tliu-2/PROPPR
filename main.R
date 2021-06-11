@@ -56,17 +56,17 @@ print(kmeans_cluster_res$Pen_Heat)
 print(kmeans_cluster_res$Blunt_Cluster)
 print(kmeans_cluster_res$Pen_Cluster)
 
-heirarch_res <- heirarch_cluster(df0)
-print(heirarch_res$cluster_plot)
+hierarch_res <- hierarch_cluster(df0)
+print(hierarch_res$cluster_plot)
 
-heirarch_sep_res <- heirarch_cluster_sep(df0)
-print(heirarch_sep_res$blunt_plot)
-print(heirarch_sep_res$pen_plot)
-heirarch_sep_res$dendro_b_agg
-heirarch_sep_res$dendro_p_agg
+hierarch_sep_res <- hierarch_cluster_sep(df0)
+print(hierarch_sep_res$blunt_plot)
+print(hierarch_sep_res$pen_plot)
+hierarch_sep_res$dendro_b_agg
+hierarch_sep_res$dendro_p_agg
 
-df_b <- heirarch_sep_res$df_b
-df_p <- heirarch_sep_res$df_p
+df_b <- hierarch_sep_res$df_b
+df_p <- hierarch_sep_res$df_p
 
 df_b %>%
   select(cluster) %>%
