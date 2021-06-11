@@ -17,10 +17,10 @@ library(data.table)
 # Returns the modified dataframe.
 pre_process <- function(df0) {
   # Pre-processing
-  biomarker_cols <- df0[51:93] #df0[8:50] 
-  # biomarker_cols = df0[8:50]
+  biomarker_cols <- df0[51:93]
   biomarkers = colnames(biomarker_cols)
   
+  # Remove columns with more than 20% values missing
   for (x in biomarkers) {
     if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
       df0[x] <- NULL
