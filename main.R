@@ -12,7 +12,7 @@ library(pheatmap)
 library(data.table)
 library(cluster)
 library(dendextend)
-source("pca.R")
+source("functions.R")
 
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 
