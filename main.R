@@ -75,3 +75,21 @@ df_b %>%
 cluster_res <- cluster_heatmap(df_b, df_p)
 print(cluster_res$mapb)
 print(cluster_res$mapp)
+
+
+# Try clustering by rows in heatmap.
+df0.p <- pre_process(df0)
+rownames.df0 <- rownames(df0.p)
+colnames.df0 <- colnames(df0.p)
+df0.t <- transpose(df0.p)
+rownames(df0.t) <- colnames.df0
+colnames(df0.t) <- rownames.df0
+
+map_all <- pheatmap(
+  df0.t,
+  cluster_rows = TRUE, cluster_cols = FALSE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "R/heatmap_all.png" 
+)

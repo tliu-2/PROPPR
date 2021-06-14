@@ -32,7 +32,7 @@ pre_process <- function(df0) {
   
   biomarkers <- colnames(biomarker_cols)
   # Impute missing values.
-  for (x in biomarker) {
+  for (x in biomarkers) {
     df0[x] <- with(df0, impute(df0[x], mean))
   }
   
