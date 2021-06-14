@@ -72,6 +72,8 @@ df_b %>%
   select(cluster) %>%
   count(cluster)
 
+gen_heatmaps(df0)
+
 cluster_res <- cluster_heatmap(df_b, df_p)
 print(cluster_res$mapb)
 print(cluster_res$mapp)
@@ -87,9 +89,99 @@ colnames(df0.t) <- rownames.df0
 
 map_all <- pheatmap(
   df0.t,
-  cluster_rows = TRUE, cluster_cols = FALSE,
+  cluster_rows = TRUE, cluster_cols = TRUE,
   cellwidth = 10,
   cellheight = 10,
   fontsize = 10,
   filename = "R/heatmap_all.png" 
 )
+
+fviz_nbclust(df0.t, kmeans, method = "silhouette")
+
+row.clust <- cutree(map_all$tree_row, k = 8)
+res.clust <- rbind(df0.t, cluster = cutree(map_all$tree_row, k = 8))
+res.clust.t <- transpose(res.clust)
+rownames(res.clust.t) <- colnames(res.clust)
+colnames(res.clust.t) <- rownames(res.clust)
+
+biomarkers <- c(0:36)
+res.1.t <- res.clust.t %>%
+  filter(cluster == 1) %>%
+  select(all_of(biomarkers))
+
+res.1 <- transpose(res.1.t)
+rownames(res.1) <- colnames(res.1.t)
+colnames(res.1) <- rownames(res.1.t)
+
+res.2.t <- res.clust.t %>%
+  filter(cluster == 2) %>%
+  select(all_of(biomarkers))
+
+res.2 <- transpose(res.2.t)
+rownames(res.2) <- colnames(res.2.t)
+colnames(res.2) <- rownames(res.2.t)
+
+
+res.3.t <- res.clust.t %>%
+  filter(cluster == 3) %>%
+  select(all_of(biomarkers))
+
+res.3 <- transpose(res.3.t)
+rownames(res.3) <- colnames(res.3.t)
+colnames(res.3) <- rownames(res.3.t)
+
+
+res.4.t <- res.clust.t %>%
+  filter(cluster == 4) %>%
+  select(all_of(biomarkers))
+
+res.4 <- transpose(res.4.t)
+rownames(res.4) <- colnames(res.4.t)
+colnames(res.4) <- rownames(res.4.t)
+
+
+res.5.t <- res.clust.t %>%
+  filter(cluster == 5) %>%
+  select(all_of(biomarkers))
+
+res.5 <- transpose(res.5.t)
+rownames(res.5) <- colnames(res.5.t)
+colnames(res.5) <- rownames(res.5.t)
+
+
+res.6.t <- res.clust.t %>%
+  filter(cluster == 6) %>%
+  select(all_of(biomarkers))
+
+res.6 <- transpose(res.6.t)
+rownames(res.6) <- colnames(res.6.t)
+colnames(res.6) <- rownames(res.6.t)
+
+
+res.7.t <- res.clust.t %>%
+  filter(cluster == 7) %>%
+  select(all_of(biomarkers))
+
+res.7 <- transpose(res.7.t)
+rownames(res.7) <- colnames(res.7.t)
+colnames(res.7) <- rownames(res.7.t)
+
+
+res.8.t <- res.clust.t %>%
+  filter(cluster == 8) %>%
+  select(all_of(biomarkers))
+
+res.8 <- transpose(res.8.t)
+rownames(res.8) <- colnames(res.8.t)
+colnames(res.8) <- rownames(res.8.t)
+
+
+pheatmap(
+  res.1,
+  cluster_rows = TRUE, cluster_cols = TRUE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "R/test1.png" 
+)
+

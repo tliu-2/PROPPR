@@ -267,7 +267,34 @@ k_means <- function(df0){
 # Saves heatmaps to disk.
 gen_heatmaps <- function(df0) {
   
-  df0 <- pre_process(df0)
+  # Pre-processing
+  biomarker_cols <- df0[51:93]
+  biomarkers = colnames(biomarker_cols)
+  
+  # Remove columns with more than 20% values missing
+  for (x in biomarkers) {
+    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+      df0[x] <- NULL
+    }
+    if(sum(is.na(biomarker_cols[x])) / nrow(biomarker_cols[x]) > 0.2) {
+      biomarker_cols[x] <- NULL
+    }
+  }
+  
+  biomarkers <- colnames(biomarker_cols)
+  # Impute missing values.
+  for (x in biomarkers) {
+    df0[x] <- with(df0, impute(df0[x], mean))
+  }
+  
+  # Standardize data.
+  for (x in biomarkers) {
+    df0[paste(substr(x, 5, nchar(x)))] <- scale(df0[x])
+  }
+  
+  std_cols <- c(227:262)
+  std_biomarkers <- colnames(df0[std_cols])
+  
   
   df_blunt <- df0 %>%
     filter(INJ_MECH == "Blunt Injury Only") %>%
@@ -295,6 +322,15 @@ gen_heatmaps <- function(df0) {
     cellheight = 10,
     fontsize = 10,
     filename = "R/heatmap_inj_mech.png"
+  )
+  
+  map <- pheatmap(
+    all_mean_t,
+    cluster_rows = TRUE, cluster_cols = FALSE,
+    cellwidth = 10,
+    cellheight = 10,
+    fontsize = 10,
+    filename = "R/heatmap_inj_mech_cluster.png"
   )
   
   # ARDS, Sepsis, SIRS
