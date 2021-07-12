@@ -12,6 +12,8 @@ library(pheatmap)
 library(data.table)
 library(cluster)
 library(dendextend)
+library(ggplot2)
+library(gridExtra)
 source("functions.R")
 
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
@@ -81,6 +83,8 @@ print(cluster_res$mapp)
 
 # Try clustering by rows in heatmap.
 df0.p <- pre_process(df0)
+df0 <- df0 %>%
+  filter(INJ_MECH != "Both Types of Injury")
 rownames.df0 <- rownames(df0.p)
 colnames.df0 <- colnames(df0.p)
 df0.t <- transpose(df0.p)
@@ -90,98 +94,155 @@ colnames(df0.t) <- rownames.df0
 map_all <- pheatmap(
   df0.t,
   cluster_rows = TRUE, cluster_cols = TRUE,
-  cellwidth = 10,
+  cellwidth = 1,
   cellheight = 10,
   fontsize = 10,
+  color = viridis(50),
   filename = "R/heatmap_all.png" 
 )
 
-fviz_nbclust(df0.t, kmeans, method = "silhouette")
+fviz_nbclust(df0.t, hcut, method = "silhouette")
+fviz_nbclust(df0.p, hcut, method = "silhouette")
 
-row.clust <- cutree(map_all$tree_row, k = 8)
-res.clust <- rbind(df0.t, cluster = cutree(map_all$tree_row, k = 8))
-res.clust.t <- transpose(res.clust)
-rownames(res.clust.t) <- colnames(res.clust)
-colnames(res.clust.t) <- rownames(res.clust)
+col.clust <- cutree(map_all$tree_col, k = 2)
+col.clust <- cbind(df0.p, cluster = cutree(map_all$tree_col, k = 2))
+col.clust <- cbind(col.clust, Survival = df0$`_30DAYST`)
 
-biomarkers <- c(0:36)
-res.1.t <- res.clust.t %>%
-  filter(cluster == 1) %>%
-  select(all_of(biomarkers))
+# Examine any clusters inside the original clusters.
+df0.t2 <- transpose_u(df0)
+res.clust.all <- rbind(df0.t2, cluster = cutree(map_all$tree_row, k = 2))
+res.clust.all <- transpose_u(res.clust.all)
 
-res.1 <- transpose(res.1.t)
-rownames(res.1) <- colnames(res.1.t)
-colnames(res.1) <- rownames(res.1.t)
+biomarker_cols <- df0[51:93]
+biomarkers <- colnames(biomarker_cols)
+res.clust.all[biomarkers] <- lapply(res.clust.all[biomarkers], as.numeric)
+res.clust.all$AGE <- as.numeric(res.clust.all$AGE)
+res.clust.all <- pre_process2(res.clust.all)
 
-res.2.t <- res.clust.t %>%
-  filter(cluster == 2) %>%
-  select(all_of(biomarkers))
+res.clust.all.mean <- res.clust.all %>%
+  group_by(cluster) %>%
+  select(all_of(biomarkers)) %>%
+  summarise_all(mean, na.rm=T) %>%
+  ungroup()
+res.clust.all.mean$cluster <- NULL
 
-res.2 <- transpose(res.2.t)
-rownames(res.2) <- colnames(res.2.t)
-colnames(res.2) <- rownames(res.2.t)
-
-
-res.3.t <- res.clust.t %>%
-  filter(cluster == 3) %>%
-  select(all_of(biomarkers))
-
-res.3 <- transpose(res.3.t)
-rownames(res.3) <- colnames(res.3.t)
-colnames(res.3) <- rownames(res.3.t)
-
-
-res.4.t <- res.clust.t %>%
-  filter(cluster == 4) %>%
-  select(all_of(biomarkers))
-
-res.4 <- transpose(res.4.t)
-rownames(res.4) <- colnames(res.4.t)
-colnames(res.4) <- rownames(res.4.t)
-
-
-res.5.t <- res.clust.t %>%
-  filter(cluster == 5) %>%
-  select(all_of(biomarkers))
-
-res.5 <- transpose(res.5.t)
-rownames(res.5) <- colnames(res.5.t)
-colnames(res.5) <- rownames(res.5.t)
-
-
-res.6.t <- res.clust.t %>%
-  filter(cluster == 6) %>%
-  select(all_of(biomarkers))
-
-res.6 <- transpose(res.6.t)
-rownames(res.6) <- colnames(res.6.t)
-colnames(res.6) <- rownames(res.6.t)
-
-
-res.7.t <- res.clust.t %>%
-  filter(cluster == 7) %>%
-  select(all_of(biomarkers))
-
-res.7 <- transpose(res.7.t)
-rownames(res.7) <- colnames(res.7.t)
-colnames(res.7) <- rownames(res.7.t)
-
-
-res.8.t <- res.clust.t %>%
-  filter(cluster == 8) %>%
-  select(all_of(biomarkers))
-
-res.8 <- transpose(res.8.t)
-rownames(res.8) <- colnames(res.8.t)
-colnames(res.8) <- rownames(res.8.t)
-
-
+# Clusters on columns of heatmap.
 pheatmap(
-  res.1,
-  cluster_rows = TRUE, cluster_cols = TRUE,
+  transpose_u(res.clust.all.mean),
+  cluster_rows = FALSE, cluster_cols = FALSE,
   cellwidth = 10,
   cellheight = 10,
   fontsize = 10,
-  filename = "R/test1.png" 
+  filename = "R/test_sub.png" 
+)
+
+df0.c1 <- res.clust.all %>%
+  filter(cluster == 1)
+df0.c2 <- res.clust.all %>%
+  filter(cluster == 2)
+
+outcomes <- colnames(res.clust.all[173:199])
+outcomes <- append(outcomes, c("RBC_10", "RAN_3HRST", "RAN_24HRST"))
+
+res.list <- compare_perc_occur(df0.c1, df0.c2, outcomes, df0)
+res1 <- data.frame(res.list$c1)
+res2 <- data.frame(res.list$c2)
+
+n <- length(res.list$plots)
+nCol <- floor(sqrt(n))
+g <- arrangeGrob(grobs = res.list$plots, ncol = nCol)
+ml <- marrangeGrob(grobs = res.list$plots, nrow = 1, ncol = 2)
+ggsave(file="occurrence.pdf", ml)
+
+
+df.blunt <- res.clust.all %>%
+  filter(INJ_MECH == "Blunt Injury Only")
+df.pen <- res.clust.all %>%
+  filter(INJ_MECH == "Penetrating Injury Only")
+print(df.blunt %>%
+        count(cluster))
+print(df.pen %>%
+        count(cluster))
+
+c <- list()
+for (x in 1:2) {
+  c[[paste("res.", x, "l", sep = "")]] <- heatmap_process(col.clust, "Living", x, FALSE)
+  c[[paste("res.", x, "d", sep = "")]] <- heatmap_process(col.clust, "Deceased", x, FALSE)
+}
+
+res.c.all <- bind_rows(c)
+res.c.all.t <- transpose_u(res.c.all)
+
+pheatmap(
+  res.c.all.t,
+  cluster_rows = FALSE, cluster_cols = FALSE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "R/test_cols.png" 
+)
+
+row.clust <- cutree(map_all$tree_row, k = 10)
+res.clust <- rbind(df0.t, cluster = cutree(map_all$tree_row, k = 10))
+res.clust.t <- transpose_u(res.clust)
+res.clust.t <- cbind(res.clust.t, Survival = df0$`_30DAYST`)
+
+res.clust.all <- rbind(df0.t2, cluster = cutree(map_all$tree_row, k = 10))
+res.clust.all <- transpose_u(res.clust.all)
+
+res.clust.all[biomarkers] <- lapply(res.clust.all[biomarkers], as.numeric)
+res.clust.all <- pre_process2(res.clust.all)
+res.clust.all.mean <- res.clust.all %>%
+  group_by(cluster) %>%
+  select(all_of(biomarkers)) %>%
+  summarise_all(mean, na.rm=T) %>%
+  ungroup()
+res.clust.all.mean$cluster <- NULL
+
+# Clusters on rows
+pheatmap(
+  transpose_u(res.clust.all.mean),
+  cluster_rows = FALSE, cluster_cols = FALSE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "R/test_sub2.png" 
+)
+
+df.list <- list()
+for (i in seq_along(1:10)) {
+  df.list[[i]] <- res.clust.all %>%
+    filter(cluster == i)
+}
+
+
+
+r <- list()
+for (x in 1:10) {
+    r[[paste("res.", x, "l", sep = "")]] <- heatmap_process(res.clust.t, "Living", x)
+    r[[paste("res.", x, "d", sep = "")]] <- heatmap_process(res.clust.t, "Deceased", x)
+}
+
+res.r.all <- bind_cols(r)
+
+
+
+clust.all.map.r <- pheatmap(
+  res.r.all,
+  cluster_rows = FALSE, cluster_cols = FALSE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "R/testr.png" 
+)
+
+
+clust.all.map.c <- pheatmap(
+  res.c.all,
+  cluster_rows = FALSE, cluster_cols = FALSE,
+  cellwidth = 10,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "R/testc.png" 
 )
 
