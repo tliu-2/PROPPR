@@ -54,6 +54,30 @@ pre_process2 <- function(df0) {
   return(df0)
 }
 
+pre_process3 <- function(df0) {
+  biomarker_cols <- df0[51:93]
+  biomarkers = colnames(biomarker_cols)
+  df0[biomarkers] <- lapply(df0[biomarkers], as.numeric)
+  
+  for (x in biomarkers) {
+    if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
+      df0[x] <- NULL
+      biomarkers[x] <- NULL
+    }
+  }
+  
+  for (x in biomarkers) {
+    df0[x] <- with(df0, impute(df0[x], mean))
+  }
+  
+  for (x in biomarkers) {
+    df0[paste(x, "_std", sep = "")] <- scale(df0[x])
+  }
+  
+  
+  return(list("df0" = df0, "cols" = colnames(df0[243:length(colnames(df0))])))
+}
+
 remove_na_patients <- function(df0) {
   for (x in colnames(df0)) {
     if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.1) {
