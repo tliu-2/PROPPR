@@ -49,7 +49,7 @@ pre_process2 <- function(df0) {
   df0[biomarkers] <- lapply(df0[biomarkers], as.numeric)
   for (x in biomarkers) {
    # df0[x] <- with(df0, impute(df0[x], mean))
-    df0[x] <- mutate_at(df0[x], x, scale)
+    df0[paste(x, "_std", sep = "")] <- scale(df0[x])
   }
   return(df0)
 }

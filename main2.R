@@ -23,9 +23,10 @@ df0 <- df0 %>%
 
 
 df0.p <- pre_process2(df0)
-
-std_cols <- c(51:93)
+std_cols <- c(234 : 276)
 std_biomarkers <- colnames(df0.p[std_cols])
+cols <- c(51:93)
+biomarkers <- colnames(df0.p[std_cols])
 
 df0.p <- remove_na_patients2(df0.p)
 
@@ -54,7 +55,7 @@ rampcolors <- c(rampcolors.low, rampcolors.mid, rampcolors.high)
 map_all <- pheatmap(
   df0.p.t,
   cluster_rows = F, cluster_cols = TRUE,
-  cellwidth = 5,
+  cellwidth = 1,
   cellheight = 5,
   fontsize = 5,
   color = rampcolors,
@@ -62,7 +63,7 @@ map_all <- pheatmap(
   filename = "R/heatmap_allv2.png" 
 )
 
-fviz_nbclust(df0.p.t, hcut, method = "silhouette")
+fviz_nbclust(transpose_u(df0.p.t), hcut, method = "silhouette")
 
 res.clust <- rbind(transpose_u(df0.p), cluster = cutree(map_all$tree_col, k = 2))
 res.clust <- transpose_u(res.clust)
@@ -81,6 +82,16 @@ df0.c5 <- res.clust %>%
   filter(cluster == 5)
 df0.c6 <- res.clust %>%
   filter(cluster == 6)
+
+df0.c1.biomarkers <- df0.c1 %>%
+  select(all_of(biomarkers))
+df0.c2.biomarkers <- df0.c2 %>%
+  select(all_of(biomarkers))
+
+df0.c1.biomarkers <- as.data.frame(lapply(df0.c1.biomarkers, as.numeric))
+df0.c2.biomarkers <- as.data.frame(lapply(df0.c2.biomarkers, as.numeric))
+
+t.test(df0.c1.biomarkers[0], df0.c2.biomarkers[0])
 
 cluster.list <- list(df0.c1, df0.c2) #, df0.c3, df0.c4, df0.c5, df0.c5)
 
