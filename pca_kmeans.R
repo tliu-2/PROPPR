@@ -15,14 +15,14 @@ library(dendextend)
 library(ggplot2)
 library(gridExtra)
 library(viridis)
-source("functions.R")
+source("functions2.R")
 
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 df0 <- df0 %>%
   filter(INJ_MECH != "Both Types of Injury")
 
 
-res_pre <- pre_process3(df0)
+res_pre <- pre_process(df0)
 df0.p <- res_pre$df0
 std_biomarkers <- res_pre$cols
 cols <- c(51:93)
