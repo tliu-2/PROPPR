@@ -59,3 +59,67 @@ remove_na_patients <- function(df0, cols) {
   }
   return(transpose_u(df))
 }
+
+make_graphs  <- function(df.list, categories) {
+  res <- list()
+  
+  pos <- 1
+  for (i in categories) {
+    df <- df.list[pos]
+    
+    y_var <- sym(i)
+    res[[i]] <- local({
+      i <- i
+      rn <- rownames(df)
+      p <- ggplot(data = df, aes(x = !! rownames(df), y = !! y_var)) + geom_bar(stat = "identity", fill = "steelblue", na.rm = T) + ggtitle(i) + geom_text(aes(label = !! y_var),  vjust=-0.3, size=3)
+      print(p)
+    })
+    pos <- pos + 1
+  }
+  return(res)
+}
+
+compare_perc_occur <- function(df.list, categories) {
+  df.res <- data.frame(matrix(nrow = length(df.list), ncol = 0))
+  #res <- list()
+  new.categories <- list()
+  for (i in categories) {
+    occurence.list <- list()
+    pos <- 1
+    for (d in df.list) {
+      total <- nrow(d[i])
+      c1 <- nrow(d %>% filter(d[[i]] == 1))
+      if (c1 / total < 0.01) {
+        break
+      }
+      occurence.list[paste(pos)] <- c1 / total
+      pos <- pos + 1
+    }
+    if (length(occurence.list) < length(df.list)) {
+      next
+    }
+    df <- bind_rows(occurence.list)
+    df <- transpose_u(df)
+    colnames(df) <- i
+    df.res <- df.res %>%
+      add_column(df)
+    new.categories <- append(new.categories, i)
+    #c1.total <- nrow(df0.c1[i])
+    #c1.1 <- nrow(df0.c1 %>%
+    #                filter(df0.c1[[i]] == 1))
+    #c2.total <- nrow(df0.c2[i])
+    #c2.1 <- nrow(df0.c2 %>%
+    #               filter(df0.c2[[i]] == 1))
+    #df <- data.frame(cluster = "1", occurrence = c1.1/c1.total)
+    #df2 <- data.frame(cluster = "2", occurrence = c2.1/c2.total)
+    #df <- rbind(df, df2)
+    #res[[i]] <- local({
+    #  i <- i
+    #  p <- ggplot(data = df, aes(x = as.numeric(rownames(df)), y = i)) + geom_bar(stat = "identity", fill = "steelblue", na.rm = T) +
+    #    geom_text(aes(label=paste(i, "occurence")), vjust=-0.3, size=3.5) + ggtitle(i)
+    #  print(p)
+    #})
+    df <- NULL
+  }
+  return(list("df" = df.res, "categories" = new.categories))
+}

@@ -91,7 +91,6 @@ df0.c2.biomarkers <- df0.c2 %>%
 df0.c1.biomarkers <- as.data.frame(lapply(df0.c1.biomarkers, as.numeric))
 df0.c2.biomarkers <- as.data.frame(lapply(df0.c2.biomarkers, as.numeric))
 
-t.test(df0.c1.biomarkers[0], df0.c2.biomarkers[0])
 
 cluster.list <- list(df0.c1, df0.c2) #, df0.c3, df0.c4, df0.c5, df0.c5)
 
