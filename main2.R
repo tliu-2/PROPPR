@@ -58,8 +58,8 @@ map_all <- pheatmap(
   cellwidth = 1,
   cellheight = 5,
   fontsize = 5,
-  #color = rampcolors,
-  #breaks = breaks,
+  color = rampcolors,
+  breaks = breaks,
   filename = "R/heatmap_allv4.png" 
 )
 

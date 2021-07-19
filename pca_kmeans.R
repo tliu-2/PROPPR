@@ -53,9 +53,11 @@ map_all <- pheatmap(
 )
 
 df0.p <- transpose_u(df0.p.t)
+
 df0.p2 <- df0.p %>%
   select(all_of(std_biomarkers))
 df0.p2[std_biomarkers] <- lapply(df0.p2[std_biomarkers], as.numeric)
+
 
 distance  <- get_dist(df0.p2)
 fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
@@ -67,6 +69,22 @@ k5 <- kmeans(df0.p2, centers = 2, nstart = 25)
 fviz_cluster(k5, data = df0.p2)
 
 res.clust <- cbind(df0.p, cluster = k5$cluster)
+
+# PCA Start
+res.clust.pca <- res.clust %>%
+  select(all_of(std_biomarkers))
+res.clust.pca[std_biomarkers] <- lapply(res.clust.pca[std_biomarkers], as.numeric)
+
+res.pca <- PCA(res.clust.pca, graph = F)
+fviz_screeplot(res.pca, addlabels = T, ylim = c(0, 50))
+var_pca <- get_pca_var(res.pca)
+fviz_contrib(res.pca, choice = "var", axes = 1)
+fviz_contrib(res.pca, choice = "var", axes = 2)
+fviz_pca_ind(res.pca,
+             label = "none",
+             col.ind = as.character(res.clust$cluster),
+             addEllipses =T)
+# PCA End
 
 outcomes <- colnames(df0[173:199])
 outcomes <- append(outcomes, c("RBC_10", "RAN_3HRST", "RAN_24HRST"))
@@ -128,9 +146,21 @@ ggsave(file="occurrencekmeans2clust.pdf", ml)
 
 
 # Table 3
-# Estimate1 = mean of x, Estimate2 = mean of y, Estimate = mean of x + y
+# Estimate1 = mean of x, Estimate2 = mean of y,
 # Statistic = t-statistic
 test.res <- compare_t_test(df0.c1.biomarkers, df0.c2.biomarkers)
 test.res.all <- data.frame(biomarker = rep(names(test.res)), bind_rows(test.res))
 print(test.res.all)
 print(test.res$log2_Hu_IL_1b__39)
+
+test.inj.res <- compare_t_test(df0.blunt.biomarkers, df0.pen.biomarkers)
+test.inj.res.all <- data.frame(biomarker = rep(names(test.inj.res)), bind_rows(test.inj.res))
+
+df.c1.stdb <- df0.c1 %>%
+  select(all_of(std_biomarkers))
+df.c2.stdb <- df0.c2 %>%
+  select(all_of(std_biomarkers))
+df.combined <- rbind(df.c1.stdb, df.c2.stdb)
+
+print(test.inj.res.all)
+print(test.res.all)
