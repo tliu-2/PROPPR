@@ -12,8 +12,9 @@ library(pheatmap)
 library(data.table)
 library(ggplot2)
 library(rlang)
+library(broom)
 
-pre_process <- function(df0) {
+pre_process <- function(df0, impute = F) {
   biomarker_cols <- df0[51:93]
   biomarkers <- colnames(biomarker_cols)
   df0[biomarkers] <- lapply(df0[biomarkers], as.numeric)
@@ -27,10 +28,11 @@ pre_process <- function(df0) {
   
   df0 <- remove_na_patients(df0, biomarkers)
   
-  
   df0[biomarkers] <- as.data.frame(lapply(df0[biomarkers], as.numeric))
-  for (x in biomarkers) {
-    df0[x] <- with(df0, impute(df0[x], mean))
+  if (impute) {
+    for (x in biomarkers) {
+      df0[x] <- with(df0, impute(df0[x], mean))
+    }
   }
   
   for (x in biomarkers) {
@@ -38,7 +40,7 @@ pre_process <- function(df0) {
   }
   
   
-  return(list("df0" = df0, "cols" = colnames(df0[227:length(colnames(df0))])))
+  return(list("df0" = df0, "cols" = biomarkers,"std_cols" = colnames(df0[227:length(colnames(df0))])))
 }
 
 transpose_u <- function(df) {
@@ -122,4 +124,13 @@ compare_perc_occur <- function(df.list, categories) {
     df <- NULL
   }
   return(list("df" = df.res, "categories" = new.categories))
+}
+
+compare_t_test <- function(df.c1, df.c2) {
+  res <- list()
+  cols <- colnames(df.c1)
+  for (i in cols) {
+    res[[i]] <- broom::tidy(t.test(df.c1[i], df.c2[i]))
+  }
+  return(res)
 }
