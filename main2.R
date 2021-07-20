@@ -24,9 +24,8 @@ df0 <- df0 %>%
 
 res_pre <- pre_process(df0, T)
 df0.p <- res_pre$df0
-std_biomarkers <- res_pre$cols
-cols <- c(51:93)
-biomarkers <- colnames(df0.p[cols])
+std_biomarkers <- res_pre$std_cols
+biomarkers <- res_pre$cols
 
 df0.p[std_biomarkers] <- lapply(df0.p[std_biomarkers], as.numeric)
 
@@ -55,11 +54,12 @@ rampcolors <- c(rampcolors.low, rampcolors.mid, rampcolors.high)
 map_all <- pheatmap(
   transpose_u(df0.p.map),
   cluster_rows = F, cluster_cols = TRUE,
-  cellwidth = 1,
+  cellwidth = 5,
   cellheight = 5,
   fontsize = 5,
   color = rampcolors,
   breaks = breaks,
+  cutree_cols = 2,
   filename = "R/heatmap_allv4.png" 
 )
 
@@ -74,14 +74,11 @@ df0.c1 <- res.clust %>%
   filter(cluster == 1)
 df0.c2 <- res.clust %>%
   filter(cluster == 2)
-df0.c3 <- res.clust %>%
-  filter(cluster == 3)
-df0.c4 <- res.clust %>%
-  filter(cluster == 4)
-df0.c5 <- res.clust %>%
-  filter(cluster == 5)
-df0.c6 <- res.clust %>%
-  filter(cluster == 6)
+
+df0.c1.export <- df0.c1 %>%
+  select(biomarker_key_SUBJECTID, cluster)
+df0.c2.export <- df0.c2 %>%
+  select(biomarker_key_SUBJECTID, cluster)
 
 df0.c1.biomarkers <- df0.c1 %>%
   select(all_of(biomarkers))
@@ -91,13 +88,62 @@ df0.c2.biomarkers <- df0.c2 %>%
 df0.c1.biomarkers <- as.data.frame(lapply(df0.c1.biomarkers, as.numeric))
 df0.c2.biomarkers <- as.data.frame(lapply(df0.c2.biomarkers, as.numeric))
 
+df0.c1.stdb <- df0.c1 %>%
+  select(all_of(std_biomarkers))
+df0.c2.stdb <- df0.c2 %>%
+  select(all_of(std_biomarkers))
+
+df0.c1.stdb <- as.data.frame(lapply(df0.c1.stdb, as.numeric))
+df0.c2.stdb <- as.data.frame(lapply(df0.c2.stdb, as.numeric))
+
+df0.c1.export <- as.data.frame(lapply(df0.c1.export, as.numeric))
+df0.c2.export <- as.data.frame(lapply(df0.c2.export, as.numeric))
+
+df.export.list <- list("Cluster1" = df0.c1.export, "Cluster2" = df0.c2.export)
+write.xlsx(df.export.list, file = "hclust_clusters.xlsx")
+
+df0.blunt <- res.clust %>%
+  filter(INJ_MECH == "Blunt Injury Only")
+
+blunt_clusters <- df0.blunt %>%
+  group_by(cluster) %>%
+  count(cluster)
+
+pen_clusters <- df0.pen %>%
+  group_by(cluster) %>%
+  count(cluster)
+
+df0.pen <- res.clust %>%
+  filter(INJ_MECH == "Penetrating Injury Only")
+
+df0.blunt.biomarkers <- df0.blunt %>%
+  select(all_of(biomarkers))
+df0.pen.biomarkers <- df0.pen %>%
+  select(all_of(biomarkers))
+
+df0.blunt.biomarkers <- as.data.frame(lapply(df0.blunt.biomarkers, as.numeric))
+df0.pen.biomarkers <- as.data.frame(lapply(df0.pen.biomarkers, as.numeric))
+ 
 clust1 <- pheatmap(
-  df0.c1.biomarkers,
+  transpose_u(df0.c1.stdb),
   cluster_rows = F, cluster_cols = F,
-  cellwidth = 5,
+  cellwidth = 1,
   cellheight = 5,
   fontsize = 5,
+  color = rampcolors,
+  breaks = breaks,
   filename = "R/heatmap_clust1.png" 
+)
+
+clust2 <- pheatmap(
+  transpose_u(df0.c2.stdb),
+  cluster_rows = F, cluster_cols = F,
+  cellwidth = 1,
+  cellheight = 5,
+  fontsize = 5,
+  color = rampcolors,
+  breaks = breaks,
+  filename = "R/heatmap_clust2.png" 
 )
 
 cluster.list <- list(df0.c1, df0.c2) #, df0.c3, df0.c4, df0.c5, df0.c5)
@@ -113,4 +159,21 @@ n <- length(plots)
 nCol <- floor(sqrt(n))
 g <- arrangeGrob(grobs = plots, ncol = nCol)
 ml <- marrangeGrob(grobs = plots, nrow = 1, ncol = 2)
-ggsave(file="occurrence.pdf", ml)
+ggsave(file="occurrence_hclust.pdf", ml)
+
+
+test.res <- compare_t_test(df0.c1.biomarkers, df0.c2.biomarkers)
+test.res.all <- data.frame(biomarker = rep(names(test.res)), bind_rows(test.res))
+
+test.inj.res <- compare_t_test(df0.blunt.biomarkers, df0.pen.biomarkers)
+test.inj.res.all <- data.frame(biomarker = rep(names(test.inj.res)), bind_rows(test.inj.res))
+
+test.res.all <- test.res.all %>%
+  filter(p.value < (0.05 / 36))
+
+test.inj.res.all <- test.inj.res.all %>%
+  filter(p.value < (0.05 / 36))
+
+print(test.res.all)
+write.xlsx(test.inj.res.all, file = "t_test_hclust_inj.xlsx")
+write.xlsx(test.res.all, file = "t_test_hclust.xlsx")

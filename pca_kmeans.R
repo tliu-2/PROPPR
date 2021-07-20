@@ -41,14 +41,27 @@ df0.p.t$`579` <- NULL
 df0.p.map <- transpose_u(df0.p.t) %>% select(all_of(std_biomarkers))
 df0.p.map <- as.data.frame(lapply(df0.p.map, as.numeric))
 
-map_all <- pheatmap(
+color <- viridis(50)
+breaks.low <- c(seq(-8, -2, by = 0.1))
+rampcolors.low <- colorRampPalette(color[1:10])(length(breaks.low))
+breaks.mid <- c(seq(-1.9, 1.9, by = 0.1))
+rampcolors.mid <- colorRampPalette(color[10:40])(length(breaks.mid))
+breaks.high <- c(seq(2, 8, by = 0.1))
+rampcolors.high <- colorRampPalette(color[40:50])(length(breaks.high))
+
+breaks <- c(breaks.low, breaks.mid, breaks.high)
+rampcolors <- c(rampcolors.low, rampcolors.mid, rampcolors.high)
+
+
+pheatmap(
   transpose_u(df0.p.map),
-  cluster_rows = F, cluster_cols = TRUE,
+  cluster_rows = T, cluster_cols = T,
   cellwidth = 1,
   cellheight = 5,
   fontsize = 5,
-  #color = rampcolors,
-  #breaks = breaks,
+  cutree_cols = 2,
+  color = rampcolors,
+  breaks = breaks,
   filename = "R/heatmap_alltest.png" 
 )
 
@@ -100,6 +113,17 @@ df0.c4 <- res.clust %>%
 df0.c5 <- res.clust %>%
   filter(cluster == 5)
 
+df0.c1.export <- df0.c1 %>%
+  select(biomarker_key_SUBJECTID, cluster)
+df0.c2.export <- df0.c2 %>%
+  select(biomarker_key_SUBJECTID, cluster)
+
+df0.c1.export <- as.data.frame(lapply(df0.c1.export, as.numeric))
+df0.c2.export <- as.data.frame(lapply(df0.c2.export, as.numeric))
+
+df.export.list <- list("Cluster1" = df0.c1.export, "Cluster2" = df0.c2.export)
+write.xlsx(df.export.list, file = "kmeans_clusters.xlsx")
+
 df0.blunt <- res.clust %>%
   filter(INJ_MECH == "Blunt Injury Only")
 
@@ -121,6 +145,46 @@ df0.c4.biomarkers <- df0.c4 %>%
   select(all_of(biomarkers))
 df0.c5.biomarkers <- df0.c5 %>%
   select(all_of(biomarkers))
+
+df0.c1.stdb <- df0.c1 %>%
+  select(all_of(std_biomarkers))
+df0.c2.stdb <- df0.c2 %>%
+  select(all_of(std_biomarkers))
+
+df0.c1.stdb <- as.data.frame(lapply(df0.c1.stdb, as.numeric))
+df0.c2.stdb <- as.data.frame(lapply(df0.c2.stdb, as.numeric))
+
+color <- viridis(100)
+breaks.low <- c(seq(-8, -3, by = 0.1))
+rampcolors.low <- colorRampPalette(color[1:25])(length(breaks.low))
+breaks.mid <- c(seq(-2.9, 2.9, by = 0.1))
+rampcolors.mid <- colorRampPalette(color[25:75])(length(breaks.mid))
+breaks.high <- c(seq(3, 8, by = 0.1))
+rampcolors.high <- colorRampPalette(color[75:100])(length(breaks.high))
+
+breaks <- c(breaks.low, breaks.mid, breaks.high)
+rampcolors <- c(rampcolors.low, rampcolors.mid, rampcolors.high)
+
+pheatmap(
+  transpose_u(df0.c1.stdb),
+  cluster_rows = F, cluster_cols = F,
+  cellwidth = 1,
+  cellheight = 5,
+  fontsize = 5,
+  color = rampcolors,
+  breaks = breaks,
+  filename = "R/cluster1.png" 
+)
+pheatmap(
+  transpose_u(df0.c2.stdb),
+  cluster_rows = F, cluster_cols = F,
+  cellwidth = 1,
+  cellheight = 5,
+  fontsize = 5,
+  color = rampcolors,
+  breaks = breaks,
+  filename = "R/cluster2.png" 
+)
 
 df0.blunt.biomarkers <- as.data.frame(lapply(df0.blunt.biomarkers, as.numeric))
 df0.pen.biomarkers <- as.data.frame(lapply(df0.pen.biomarkers, as.numeric))
@@ -150,17 +214,15 @@ ggsave(file="occurrencekmeans2clust.pdf", ml)
 # Statistic = t-statistic
 test.res <- compare_t_test(df0.c1.biomarkers, df0.c2.biomarkers)
 test.res.all <- data.frame(biomarker = rep(names(test.res)), bind_rows(test.res))
-print(test.res.all)
-print(test.res$log2_Hu_IL_1b__39)
 
 test.inj.res <- compare_t_test(df0.blunt.biomarkers, df0.pen.biomarkers)
 test.inj.res.all <- data.frame(biomarker = rep(names(test.inj.res)), bind_rows(test.inj.res))
 
-df.c1.stdb <- df0.c1 %>%
-  select(all_of(std_biomarkers))
-df.c2.stdb <- df0.c2 %>%
-  select(all_of(std_biomarkers))
-df.combined <- rbind(df.c1.stdb, df.c2.stdb)
 
 print(test.inj.res.all)
+
+test.res.all <- test.res.all %>%
+  filter(p.value < (0.05 / 36))
+
 print(test.res.all)
+write.xlsx(test.res.all, file = "t_test.xlsx")
