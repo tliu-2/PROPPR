@@ -1,22 +1,20 @@
-library("dplyr")
 library("openxlsx")
 library("tidyverse")
-library("ggplot2")
-library("FactoMineR")
+#library("FactoMineR")
 library("factoextra")
 library("corrplot")
 library(Hmisc)
-library(missMDA)
-library(vegan)
+#library(missMDA)
+#library(vegan)
 library(pheatmap)
 library(data.table)
-library(cluster)
-library(dendextend)
+#library(cluster)
+#library(dendextend)
 library(ggplot2)
 library(gridExtra)
 library(viridis)
 library(broom)
-source("functions2.R")
+source("./R/functions2.R")
 
 df.hclust.1 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster1.H")
 df.hclust.2 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster2.H")
@@ -27,8 +25,16 @@ df.inner.join.1 <- inner_join(df.hclust.1, df.kmeans.1, by = "biomarker_key_SUBJ
 
 df.inner.join.2 <- inner_join(df.hclust.2, df.kmeans.2, by = "biomarker_key_SUBJECTID")
 
+df.left.join.1 <- left_join(df.hclust.1, df.kmeans.1, by = "biomarker_key_SUBJECTID")
+df.left.join.2 <- left_join(df.hclust.2, df.kmeans.2, by = "biomarker_key_SUBJECTID")
 
-df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+df.clst.list <- list("Cluster1" = df.left.join.1, "Cluster2" = df.left.join.2)
+write.xlsx(df.clst.list, file = "Compare_K_Hclust/compare_clusters_left_join.xlsx")
+
+
+
+
+df0 = read.xlsx("./data/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 df0 <- df0 %>%
   filter(INJ_MECH != "Both Types of Injury")
 
@@ -48,12 +54,13 @@ df0.p.t$`587` <- NULL
 df0.p.t$`355` <- NULL
 df0.p.t$`579` <- NULL
 
-# End preprocess
-
-# PCA on hclust clusters
 
 df0.p.map <- transpose_u(df0.p.t) %>% select(all_of(std_biomarkers))
 df0.p.map <- as.data.frame(lapply(df0.p.map, as.numeric))
+
+# End preprocess
+
+# PCA on hclust clusters
 
 map.all.h <- pheatmap(
   transpose_u(df0.p.map),
@@ -88,7 +95,8 @@ df0.c1.h <- res.clust.h %>%
 df0.c2.h <- res.clust.h %>%
   filter(cluster == 2)
 
-
+print(df0.c1.h %>% count(INJ_MECH))
+print(df0.c2.h %>% count(INJ_MECH))
 
 # PCA on Kmeans clusters
 
@@ -116,6 +124,9 @@ df0.c1.k <- res.clust.k %>%
   filter(cluster == 1)
 df0.c2.k <- res.clust.k %>%
   filter(cluster == 2)
+
+print(df0.c1.k %>% count(INJ_MECH))
+print(df0.c2.k %>% count(INJ_MECH))
 
 # PCA Start
 res.clust.pca.k <- res.clust.k %>%

@@ -15,7 +15,7 @@ library(dendextend)
 library(ggplot2)
 library(gridExtra)
 library(viridis)
-source("functions2.R")
+source("./R/functions2.R")
 
 df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 df0 <- df0 %>%
