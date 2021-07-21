@@ -65,8 +65,7 @@ map_all <- pheatmap(
 
 fviz_nbclust(df0.p.map, hcut, method = "silhouette")
 
-res.clust <- rbind(transpose_u(df0.p), cluster = cutree(map_all$tree_col, k = 2))
-res.clust <- transpose_u(res.clust)
+res.clust <- cbind(transpose_u(df0.p.t), cluster = cutree(map_all$tree_col, k = 2))
 
 res.clust[std_biomarkers] <- lapply(res.clust[std_biomarkers], as.numeric)
 
