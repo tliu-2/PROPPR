@@ -106,21 +106,6 @@ compare_perc_occur <- function(df.list, categories) {
     df.res <- df.res %>%
       add_column(df)
     new.categories <- append(new.categories, i)
-    #c1.total <- nrow(df0.c1[i])
-    #c1.1 <- nrow(df0.c1 %>%
-    #                filter(df0.c1[[i]] == 1))
-    #c2.total <- nrow(df0.c2[i])
-    #c2.1 <- nrow(df0.c2 %>%
-    #               filter(df0.c2[[i]] == 1))
-    #df <- data.frame(cluster = "1", occurrence = c1.1/c1.total)
-    #df2 <- data.frame(cluster = "2", occurrence = c2.1/c2.total)
-    #df <- rbind(df, df2)
-    #res[[i]] <- local({
-    #  i <- i
-    #  p <- ggplot(data = df, aes(x = as.numeric(rownames(df)), y = i)) + geom_bar(stat = "identity", fill = "steelblue", na.rm = T) +
-    #    geom_text(aes(label=paste(i, "occurence")), vjust=-0.3, size=3.5) + ggtitle(i)
-    #  print(p)
-    #})
     df <- NULL
   }
   return(list("df" = df.res, "categories" = new.categories))

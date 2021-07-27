@@ -235,10 +235,5 @@ fviz_pca_ind(res.pca.k,
 pca.3d.k <- prcomp(res.clust.pca.k)
 summary(pca.3d.k)
 scores <- as.data.frame(pca.3d.k$x)
-plot3d(scores[,1:3], col=c(1:2), size=10, type='p', xlim=c(-50, 50), ylim=c(-50,50), zlim=c(-50,50))
+plot3d(scores[,1:3], col=res.clust.k$cluster, size=10, type='p', xlim=c(-10, 10), ylim=c(-10,10), zlim=c(-10,10))
 #text3d(scores[,1] + 2, scores[,2] + 10, scores[,3] + 2, texts = c(rownames(scores)), cex=0.7, pos=3)
-dir.create("animation_merge")
-for (i in 1:360) {
-  view3d(userMatrix=rotationMatrix(2*pi * i/360, 0, 1, 0))
-  rgl.snapshot(filename=paste("animation_merge/frame-",
-                              sprintf("%03d", i), ".png", sep=""))}
