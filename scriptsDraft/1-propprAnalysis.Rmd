@@ -205,16 +205,42 @@ var2.contrib.h
 pca.hclust
 ```
 
+## Outcomes
+```{r hclust_outcome, eval = T, fig.show='hide'}
+outcomes <- colnames(df0[173:199])
+outcomes <- append(outcomes, c("RBC_10", "RAN_3HRST", "RAN_24HRST"))
+
+df0.c1 <- res.clust.h %>%
+  filter(cluster == 1)
+df0.c2 <- res.clust.h %>%
+  filter(cluster == 2)
+
+cluster.list <- list(df0.c1, df0.c2) #, df0.c3, df0.c4, df0.c5, df0.c5)
+
+res.list <- compare_perc_occur(cluster.list, outcomes)
+
+plots <- make_graphs(res.list$df, res.list$categories)
+
+n <- length(plots)
+nCol <- floor(sqrt(n))
+g <- arrangeGrob(grobs = plots, ncol = nCol)
+ml <- marrangeGrob(grobs = plots, nrow = 1, ncol = 2)
+```
+
+```{r hclust_plots, eval = T}
+ml
+```
+
 # K-Means Clustering {.tabset}
 ```{r k-means, eval = T, fig.show='hide'}
-df0.p <- transpose_u(df0.p.t)
+df0.p.k <- transpose_u(df0.p.t)
 
-df0.p2 <- df0.p %>%
+df0.p2 <- df0.p.k %>%
   select(all_of(std_biomarkers))
 df0.p2[std_biomarkers] <- lapply(df0.p2[std_biomarkers], as.numeric)
 
 map.all.k <- pheatmap(
-  df0.p.map,
+  df0.p2,
   kmeans_k=2,
   cluster_rows = F, cluster_cols = F,
   cellwidth = 5,
@@ -232,7 +258,7 @@ fviz_nbclust(df0.p2, kmeans, method = "silhouette")
 ## Heatmap
 ![Hierarchical Clustering Heatmap](C:/Users/CakeyMoon/Desktop/PROPPR/R_figures/heatmap_kmeans.png)
 ```{r pca_kmeans, eval=T}
-res.clust.k <- cbind(df0.p, cluster = map.all.k$kmeans$cluster)
+res.clust.k <- cbind(df0.p.k, cluster = map.all.k$kmeans$cluster)
 
 # PCA Start
 res.clust.pca.k <- res.clust.k %>%
@@ -258,3 +284,28 @@ var1.contrib.k
 var2.contrib.k
 ```
 
+## Outcomes
+```{r kmeans_outcomes, eval = T, fig.show='hide'}
+
+outcomes <- colnames(df0[173:199])
+outcomes <- append(outcomes, c("RBC_10", "RAN_3HRST", "RAN_24HRST"))
+
+df0.c1 <- res.clust.k %>%
+  filter(cluster == 1)
+df0.c2 <- res.clust.k %>%
+  filter(cluster == 2)
+
+cluster.list <- list(df0.c1, df0.c2) #, df0.c3, df0.c4, df0.c5, df0.c5)
+
+res.list <- compare_perc_occur(cluster.list, outcomes)
+
+plots <- make_graphs(res.list$df, res.list$categories)
+
+n <- length(plots)
+nCol <- floor(sqrt(n))
+g <- arrangeGrob(grobs = plots, ncol = nCol)
+ml <- marrangeGrob(grobs = plots, nrow = 1, ncol = 2)
+```
+```{r kmeans_plots, eval = T}
+ml
+```

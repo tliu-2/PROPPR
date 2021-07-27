@@ -18,7 +18,7 @@ library(viridis)
 library(broom)
 source("./R/functions2.R")
 
-df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+df0 = read.xlsx("./data/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 df0 <- df0 %>%
   filter(INJ_MECH != "Both Types of Injury")
 
@@ -62,7 +62,7 @@ pheatmap(
   cutree_cols = 2,
   color = rampcolors,
   breaks = breaks,
-  filename = "R/heatmap_alltest.png" 
+  #filename = "R/heatmap_alltest.png" 
 )
 
 df0.p <- transpose_u(df0.p.t)

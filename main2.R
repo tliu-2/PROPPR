@@ -17,7 +17,7 @@ library(gridExtra)
 library(viridis)
 source("./R/functions2.R")
 
-df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+df0 = read.xlsx("./data/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 df0 <- df0 %>%
   filter(INJ_MECH != "Both Types of Injury")
 
@@ -60,7 +60,7 @@ map_all <- pheatmap(
   color = rampcolors,
   breaks = breaks,
   cutree_cols = 2,
-  filename = "R/heatmap_allv4.png" 
+  #filename = "R/heatmap_allv4.png" 
 )
 
 fviz_nbclust(df0.p.map, hcut, method = "silhouette")
