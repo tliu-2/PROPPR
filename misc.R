@@ -22,9 +22,9 @@ df.hclust.2 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Clus
 df.kmeans.1 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster1.K")
 df.kmeans.2 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster2.K")
 
-df.inner.join.1 <- inner_join(df.hclust.1, df.kmeans.2, by = "biomarker_key_SUBJECTID")
+df.inner.join.1 <- inner_join(df.hclust.1, df.kmeans.1, by = "biomarker_key_SUBJECTID")
 
-df.inner.join.2 <- inner_join(df.hclust.2, df.kmeans.1, by = "biomarker_key_SUBJECTID")
+df.inner.join.2 <- inner_join(df.hclust.2, df.kmeans.2, by = "biomarker_key_SUBJECTID")
 
 df.left.join.1 <- left_join(df.hclust.1, df.kmeans.1, by = "biomarker_key_SUBJECTID")
 df.left.join.2 <- left_join(df.hclust.2, df.kmeans.2, by = "biomarker_key_SUBJECTID")
@@ -40,8 +40,8 @@ df.k.inner.join.2 <- inner_join(df0.c2.k, df.kmeans.2.outlier, by = "biomarker_k
 
 
 df0 = read.xlsx("./data/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
-df0 <- df0 %>%
-  filter(INJ_MECH != "Both Types of Injury")
+#df0 <- df0 %>%
+#  filter(INJ_MECH != "Both Types of Injury")
 
 # Preprocess
 res_pre <- pre_process(df0, T)
@@ -80,7 +80,7 @@ map.all.h <- pheatmap(
   cellheight = 5,
   fontsize = 5,
   cutree_cols = 2,
-  filename = './R_figures/heatmap_hclust.png'
+  #filename = './R_figures/heatmap_hclust_t.png'
 )
 
 # PCA Start
@@ -95,7 +95,7 @@ res.clust.h[std_biomarkers] <- lapply(res.clust.h[std_biomarkers], as.numeric)
 res.pca.h <- PCA(res.clust.h[std_biomarkers], graph = F)
 fviz_screeplot(res.pca.h, addlabels = T, ylim = c(0, 50))
 var_pca <- get_pca_var(res.pca.h)
-fviz_contrib(res.pca.h, choice = "var", axes = 1)
+fviz_contrib(res.pca.h, choice = "var", axes = 1, top = 10)
 fviz_pca_ind(res.pca.h,
              label = "none",
              col.ind = as.character(res.clust.h$cluster),
@@ -167,8 +167,6 @@ df0.c3.k <- res.clust.k %>%
   filter(cluster == 3)
 df0.c4.k <- res.clust.k %>%
   filter(cluster == 4)
-df0.c5.k <- res.clust.k %>%
-  filter(cluster == 5)
 
 print(res.clust.k %>% count(INJ_MECH))
 print(df0.c1.k %>% count(INJ_MECH))
@@ -189,7 +187,7 @@ var_pca.k <- get_pca_var(res.pca.k)
 
 corrplot(var_pca.k$contrib, is.corr=FALSE)  
 
-fviz_contrib(res.pca.k, choice = "var", axes = 2 , top = 10)
+fviz_contrib(res.pca.k, choice = "var", axes = 1 , top = 10)
 fviz_pca_ind(res.pca.k,
              label = "none",
              col.ind = as.character(res.clust.k$cluster),
@@ -210,29 +208,28 @@ df0.c2.export.k <- df0.c2.k %>%
   
 df.export.list <- list("Cluster1.H" = df0.c1.export.hclust, "Cluster2.H" = df0.c2.export.hclust,
                        "Cluster1.K" = df0.c1.export.k, "Cluster2.K" = df0.c2.export.k)
-write.xlsx(df.export.list, file = "compare_clusters.xlsx")
+write.xlsx(df.export.list, file = "./Compare_K_Hclust/compare_clusters.xlsx")
 
 df.export.list.full <- list("Hclust" = res.clust.h, "Kmeans" = res.clust.k)
-write.xlsx(df.export.list.full, file = "dataset_clustering.xlsx")
+write.xlsx(df.export.list.full, file = "./Compare_K_Hclust/dataset_clustering.xlsx")
 
 # Occurence Output
 
 outcomes <- colnames(df0[173:199])
 outcomes <- append(outcomes, c("RBC_10", "RAN_3HRST", "RAN_24HRST"))
 
-df0.c1 <- res.clust.k %>%
+df0.c1 <- res.clust.h %>%
   filter(cluster == 1)
-df0.c2 <- res.clust.k %>%
+df0.c2 <- res.clust.h %>%
   filter(cluster == 2)
 df0.c3 <- res.clust.k %>%
   filter(cluster == 3)
 df0.c4 <- res.clust.k %>%
   filter(cluster == 4)
-df0.c5 <- res.clust.k %>%
-  filter(cluster == 5)
 
 
-cluster.list <- list(df0.c1, df0.c2, df0.c3, df0.c4, df0.c5)
+
+cluster.list <- list(df0.c1, df0.c2, df0.c3, df0.c4)
 
 res.list <- compare_perc_occur(cluster.list, outcomes)
 
@@ -242,7 +239,7 @@ n <- length(plots)
 nCol <- floor(sqrt(n))
 g <- arrangeGrob(grobs = plots, ncol = nCol)
 ml <- marrangeGrob(grobs = plots, nrow = 1, ncol = 2)
-ggsave(file="occurence_kmeans5.pdf", ml)
+ggsave(file="occurence_kmeans4.pdf", ml)
 
 
 # Check against grouping by injury mech
