@@ -1,0 +1,72 @@
+---
+title: "1_trauma_heatmaps"
+author: "Ted Liu"
+date: "6/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r libraries}
+library("dplyr")
+library("openxlsx")
+library("tidyverse")
+library("ggplot2")
+library("FactoMineR")
+library("factoextra")
+library("corrplot")
+library(Hmisc)
+library(missMDA)
+library(vegan)
+library(pheatmap)
+library(data.table)
+library(cluster)
+library(dendextend)
+library(ggplot2)
+library(gridExtra)
+suppressPackageStartupMessages(library(viridis))
+source("functions.R")
+```
+
+
+```{r import, echo=FALSE}
+df0 = read.xlsx("PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
+
+df0.p <- pre_process(df0)
+df0 <- df0 %>%
+  filter(INJ_MECH != "Both Types of Injury")
+rownames.df0 <- rownames(df0.p)
+colnames.df0 <- colnames(df0.p)
+df0.t <- transpose(df0.p)
+rownames(df0.t) <- colnames.df0
+colnames(df0.t) <- rownames.df0
+
+map_all <- pheatmap(
+  df0.t,
+  cluster_rows = TRUE, cluster_cols = TRUE,
+  cellwidth = 1,
+  cellheight = 10,
+  fontsize = 10,
+  filename = "R/heatmap_all.png" 
+)
+
+df0.t2 <- transpose_u(df0)
+res.clust.all <- rbind(df0.t2, cluster = cutree(map_all$tree_row, k = 2))
+res.clust.all <- transpose_u(res.clust.all)
+
+biomarker_cols <- df0[51:93]
+biomarkers <- colnames(biomarker_cols)
+res.clust.all[biomarkers] <- lapply(res.clust.all[biomarkers], as.numeric)
+res.clust.all$AGE <- as.numeric(res.clust.all$AGE)
+res.clust.all <- pre_process2(res.clust.all)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

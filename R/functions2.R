@@ -73,7 +73,7 @@ make_graphs  <- function(df.list, categories) {
     res[[i]] <- local({
       i <- i
       rn <- rownames(df)
-      p <- ggplot(data = df, aes(x = !! rownames(df), y = !! y_var)) + geom_bar(stat = "identity", fill = "steelblue", na.rm = T) + ggtitle(i) + geom_text(aes(label = !! y_var),  vjust=-0.3, size=3)
+      p <- ggplot(data = df, aes(x = !! rownames(df), y = !! y_var))  + ylim(0, 1) + geom_bar(stat = "identity", fill = "steelblue", na.rm = T) + ggtitle(i) + geom_text(aes(label = !! y_var),  vjust=-0.3, size=1.5)
       print(p)
     })
     pos <- pos + 1

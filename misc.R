@@ -95,11 +95,11 @@ res.clust.h[std_biomarkers] <- lapply(res.clust.h[std_biomarkers], as.numeric)
 res.pca.h <- PCA(res.clust.h[std_biomarkers], graph = F)
 fviz_screeplot(res.pca.h, addlabels = T, ylim = c(0, 50))
 var_pca <- get_pca_var(res.pca.h)
-fviz_contrib(res.pca.h, choice = "var", axes = 1:2)
+fviz_contrib(res.pca.h, choice = "var", axes = 1)
 fviz_pca_ind(res.pca.h,
              label = "none",
              col.ind = as.character(res.clust.h$cluster),
-             addEllipses =T)
+             addEllipses = F)
 # PCA End
 
 df0.c1.h <- res.clust.h %>%
@@ -121,9 +121,10 @@ res.clust.all.mean$cluster <- NULL
 pheatmap(
   res.clust.all.mean,
   cluster_rows = FALSE, cluster_cols = FALSE,
-  cellwidth = 10,
-  cellheight = 10,
+  cellwidth = 20,
+  cellheight = 20,
   fontsize = 10,
+  display_numbers = T,
   filename = "R_figures/hclust_summary.png" 
 )
 
@@ -136,16 +137,22 @@ df0.p2 <- df0.p.k %>%
   select(all_of(std_biomarkers))
 df0.p2[std_biomarkers] <- lapply(df0.p2[std_biomarkers], as.numeric)
 fviz_nbclust(df0.p2, kmeans, method = "silhouette")
+fviz_nbclust(df0.p2, kmeans, method = "gap_stat")
+fviz_nbclust(df0.p2, kmeans, method = "wss")
+
+
+set.seed(42)
 
 map.all.k <- pheatmap(
   df0.p2,
   kmeans_k=2,
   cluster_rows = F, cluster_cols = F,
-  cellwidth = 10,
-  cellheight = 10,
+  cellwidth = 20,
+  cellheight = 20,
   fontsize = 10,
   cutree_cols = 2,
-  #filename = "./R_figures/kmeans_heatmap.png"
+  display_numbers = T,
+  filename = "./R_figures/kmeans_heatmap.png"
 )
 
 
@@ -156,8 +163,14 @@ df0.c1.k <- res.clust.k %>%
   filter(cluster == 1)
 df0.c2.k <- res.clust.k %>%
   filter(cluster == 2)
+df0.c3.k <- res.clust.k %>%
+  filter(cluster == 3)
+df0.c4.k <- res.clust.k %>%
+  filter(cluster == 4)
+df0.c5.k <- res.clust.k %>%
+  filter(cluster == 5)
 
-
+print(res.clust.k %>% count(INJ_MECH))
 print(df0.c1.k %>% count(INJ_MECH))
 print(df0.c2.k %>% count(INJ_MECH))
 
@@ -167,13 +180,20 @@ res.clust.pca.k <- res.clust.k %>%
 res.clust.pca.k[std_biomarkers] <- lapply(res.clust.pca.k[std_biomarkers], as.numeric)
 
 res.pca.k <- PCA(res.clust.pca.k, graph = F)
+
+eig.val.k <- get_eigenvalue(res.pca.k)
+eig.val.k
+
 fviz_screeplot(res.pca.k, addlabels = T, ylim = c(0, 50))
 var_pca.k <- get_pca_var(res.pca.k)
-fviz_contrib(res.pca.k, choice = "var", axes = 1:2)
+
+corrplot(var_pca.k$contrib, is.corr=FALSE)  
+
+fviz_contrib(res.pca.k, choice = "var", axes = 2 , top = 10)
 fviz_pca_ind(res.pca.k,
              label = "none",
              col.ind = as.character(res.clust.k$cluster),
-             addEllipses = T, axes = c(1,2))
+             addEllipses = F, axes = c(1,2))
 # PCA End
 
 
@@ -200,12 +220,19 @@ write.xlsx(df.export.list.full, file = "dataset_clustering.xlsx")
 outcomes <- colnames(df0[173:199])
 outcomes <- append(outcomes, c("RBC_10", "RAN_3HRST", "RAN_24HRST"))
 
-df0.c1 <- res.clust.h %>%
+df0.c1 <- res.clust.k %>%
   filter(cluster == 1)
-df0.c2 <- res.clust.h %>%
+df0.c2 <- res.clust.k %>%
   filter(cluster == 2)
+df0.c3 <- res.clust.k %>%
+  filter(cluster == 3)
+df0.c4 <- res.clust.k %>%
+  filter(cluster == 4)
+df0.c5 <- res.clust.k %>%
+  filter(cluster == 5)
 
-cluster.list <- list(df0.c1, df0.c2) #, df0.c3, df0.c4, df0.c5, df0.c5)
+
+cluster.list <- list(df0.c1, df0.c2, df0.c3, df0.c4, df0.c5)
 
 res.list <- compare_perc_occur(cluster.list, outcomes)
 
@@ -215,7 +242,7 @@ n <- length(plots)
 nCol <- floor(sqrt(n))
 g <- arrangeGrob(grobs = plots, ncol = nCol)
 ml <- marrangeGrob(grobs = plots, nrow = 1, ncol = 2)
-ggsave(file="occurence_hclust.pdf", ml)
+ggsave(file="occurence_kmeans5.pdf", ml)
 
 
 # Check against grouping by injury mech
