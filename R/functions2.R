@@ -18,11 +18,13 @@ pre_process <- function(df0, impute = F) {
   biomarker_cols <- df0[51:93]
   biomarkers <- colnames(biomarker_cols)
   df0[biomarkers] <- lapply(df0[biomarkers], as.numeric)
+  removed_list <- list()
   for (x in biomarkers) {
     if (sum(is.na(df0[x])) / nrow(df0[x]) > 0.2) {
       df0[x] <- NULL
       element_to_remove <- x
       biomarkers <- biomarkers[!(biomarkers %in% element_to_remove)]
+      removed_list[[x]] <- x
     }
   }
   
@@ -40,7 +42,7 @@ pre_process <- function(df0, impute = F) {
   }
   
   
-  return(list("df0" = df0, "cols" = biomarkers,"std_cols" = colnames(df0[227:length(colnames(df0))])))
+  return(list("df0" = df0, "cols" = biomarkers,"std_cols" = colnames(df0[228:length(colnames(df0))]), "removed" = removed_list))
 }
 
 transpose_u <- function(df) {
@@ -73,7 +75,7 @@ make_graphs  <- function(df.list, categories) {
     res[[i]] <- local({
       i <- i
       rn <- rownames(df)
-      p <- ggplot(data = df, aes(x = !! rownames(df), y = !! y_var))  + ylim(0, 1) + geom_bar(stat = "identity", fill = "steelblue", na.rm = T) + ggtitle(i) + geom_text(aes(label = !! y_var),  vjust=-0.3, size=1.5)
+      p <- ggplot(data = df, aes(x = !! rownames(df), y = !! y_var))  + ylim(0, 1) + geom_bar(stat = "identity", fill = "steelblue", na.rm = T) + ggtitle(i) + geom_text(aes(label = !! y_var),  vjust=-0.3, size=2.5)
       print(p)
     })
     pos <- pos + 1
