@@ -15,12 +15,10 @@ library(gridExtra)
 library(viridis)
 library(broom)
 library(rgl)
+library(ComplexHeatmap)
+
 source("./R/functions2.R")
 
-df.hclust.1 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster1.H")
-df.hclust.2 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster2.H")
-df.kmeans.1 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster1.K")
-df.kmeans.2 <- read.xlsx("Compare_K_Hclust/compare_clusters.xlsx", sheet = "Cluster2.K")
 
 df.inner.join.1 <- inner_join(df.hclust.1, df.kmeans.1, by = "biomarker_key_SUBJECTID")
 
@@ -32,16 +30,15 @@ df.left.join.2 <- left_join(df.hclust.2, df.kmeans.2, by = "biomarker_key_SUBJEC
 df.clst.list <- list("Cluster1" = df.left.join.1, "Cluster2" = df.left.join.2)
 write.xlsx(df.clst.list, file = "Compare_K_Hclust/compare_clusters_left_join.xlsx")
 
-df.kmeans.1.outlier <- read.xlsx("Compare_K_Hclust/compare_outlier_kmeans.xlsx", sheet = "Cluster1")
-df.kmeans.2.outlier <- read.xlsx("Compare_K_Hclust/compare_outlier_kmeans.xlsx", sheet = "Cluster2")
+df.old <- read.csv("dataset_clustering_8.4.21.csv", stringsAsFactors = F)
+df.new <- read.csv("dataset_clustering_complex_8.4.21.csv", stringsAsFactors = F)
 
-df.k.inner.join.1 <- inner_join(df0.c1.k, df.kmeans.1.outlier, by = "biomarker_key_SUBJECTID")
-df.k.inner.join.2 <- inner_join(df0.c2.k, df.kmeans.2.outlier, by = "biomarker_key_SUBJECTID")
-
+df.check.1 <- inner_join(df.old %>% filter(cluster == 1), df.new %>% filter(cluster == 2), by = c("biomarker_key_PROPPRID"))
+df.check.2 <- inner_join(df.old %>% filter(cluster == 2), df.new %>% filter(cluster == 1), by = c("biomarker_key_PROPPRID"))
 
 df0 = read.xlsx("./data/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
-#df0 <- df0 %>%
-#  filter(INJ_MECH == "Blunt Injury Only")
+df0 <- df0 %>%
+  filter(INJ_MECH == "Blunt Injury Only")
 
 print(df0 %>% select(all_of(outcomes), INJ_MECH, female1, AGE, WHITE_RE, BLACK_RE, OTHER_RE) 
       %>% group_by(INJ_MECH) %>% 
@@ -158,7 +155,7 @@ rampcolors.high <- colorRampPalette(color[40:50])(length(breaks.high))
 
 breaks <- c(breaks.low, breaks.mid, breaks.high)
 rampcolors <- c(rampcolors.low, rampcolors.mid, rampcolors.high)
-
+col.maps <- circlize::colorRamp2(breaks, rampcolors)
 
 set.seed(42)
 
@@ -177,9 +174,62 @@ map.all.k <- pheatmap(
   #filename = "./R_figures/kmeans_heatmap.png"
 )
 
+set.seed(42)
+png(filename = "./R_figures/complex_kmeans_heatmap.png", width=10,height=10,units="in",res=1200)
+map.all.k <- Heatmap(
+  data.matrix(df0.p2), width = unit(15, "cm"),
+  cluster_rows = F,
+  row_km = 2
+)
+ht <- draw(map.all.k)
+ht
+dev.off()
+clusterlist = row_order(ht)
 
 clusters.k <- map.all.k$kmeans$cluster
+
+row.names(df0.p.k) <- df0.p.k$biomarker_key_PROPPRID
+rcl.list <- row_order(ht)
+lapply(rcl.list, function(x) length(x))
+for (i in 1:length(row_order(ht))){
+  if (i == 1) {
+    clu <- t(t(row.names(data.matrix(df0.p.k[row_order(ht)[[i]],]))))
+    out <- cbind(clu, paste(i))
+    colnames(out) <- c("biomarker_key_PROPPRID", "cluster")
+    } else {
+      clu <- t(t(row.names(data.matrix(df0.p.k[row_order(ht)[[i]],]))))
+      clu <- cbind(clu, paste(i))
+      out <- rbind(out, clu)
+    }
+}
+
+out
+
 res.clust.k <- cbind(df0.p.k, cluster = map.all.k$kmeans$cluster)
+res.clust.k <- inner_join(df0.p.k, out, by = "biomarker_key_PROPPRID", copy = T)
+
+res.clust.k[std_biomarkers] <- lapply(res.clust.k[std_biomarkers], as.numeric)
+
+df0.c1.k.mean <- res.clust.k %>%
+  filter(cluster == 1) %>%
+  select(all_of(std_biomarkers)) %>%
+  summarise_all(mean, na.rm = T)
+
+df0.c2.k.mean <- res.clust.k %>%
+  filter(cluster == 2) %>%
+  select(all_of(std_biomarkers)) %>%
+  summarise_all(mean, na.rm = T)
+
+df0.all.k.mean <- rbind(df0.c1.k.mean, df0.c2.k.mean)
+df0.all.k.mean.t <- transpose_u(df0.all.k.mean)
+df0.all.k.mean.t <- data.frame(biomarkers = rownames(df0.all.k.mean.t), value1 = df0.all.k.mean.t$`1`, value2 = df0.all.k.mean.t$`2`)
+
+p = ggplot() + geom_line(data = df0.all.k.mean.t, aes(x = biomarkers, y = value1, color = "Cluster 1", group = 1)) +
+  geom_line(data = df0.all.k.mean.t, aes(x = biomarkers, y = value2, color = "Cluster 2", group = 1)) + coord_flip() + 
+  labs(x = "biomarkers", y = "mean z-score of log2")
+  
+print(p)
+ggsave("compare_clusters_line.png", plot = p)
 
 df0.c1.k <- res.clust.k %>% 
   filter(cluster == 1)
@@ -224,7 +274,7 @@ set.seed(42)
 pheatmap(
   transpose_u(map.clust.k.1),
   cluster_rows = T, cluster_cols = T,
-  cellwidth = 20,
+  cellwidth = 1,
   cellheight = 20,
   fontsize = 10,
   display_numbers = F,
@@ -284,7 +334,7 @@ df.export.list <- list("Cluster1.H" = df0.c1.export.hclust, "Cluster2.H" = df0.c
 write.xlsx(df.export.list, file = "./Compare_K_Hclust/compare_clusters.xlsx")
 
 df.export.list.full <- list("Hclust" = res.clust.h, "Kmeans" = res.clust.k)
-write.csv(res.clust.k, file = "./Compare_K_Hclust/blunt_only_kmeans.csv")
+write.csv(res.clust.k, file = "dataset_clustering_complex_8.4.21.csv")
 
 # Occurence Output
 
@@ -312,7 +362,7 @@ n <- length(plots)
 nCol <- floor(sqrt(n))
 g <- arrangeGrob(grobs = plots, ncol = nCol)
 ml <- marrangeGrob(grobs = plots, nrow = 1, ncol = 2)
-ggsave(file="occurence_kmeans.pdf", ml)
+ggsave(file="occurence_kmeans.8.4.21.pdf", ml)
 
 
 # Check against grouping by injury mech

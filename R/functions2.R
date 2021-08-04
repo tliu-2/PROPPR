@@ -42,7 +42,7 @@ pre_process <- function(df0, impute = F) {
   }
   
   
-  return(list("df0" = df0, "cols" = biomarkers,"std_cols" = colnames(df0[228:length(colnames(df0))]), "removed" = removed_list))
+  return(list("df0" = df0, "cols" = biomarkers,"std_cols" = colnames(df0[227:length(colnames(df0))]), "removed" = removed_list))
 }
 
 transpose_u <- function(df) {
@@ -53,12 +53,15 @@ transpose_u <- function(df) {
 }
 
 remove_na_patients <- function(df0, cols) {
-  biomarker_cols <- df0[51:93]
-  biomarkers <- colnames(biomarker_cols)
+  biomarkers <- cols
   df <- transpose_u(df0)
-  for (i in colnames(df)) {
-    if (sum(is.na(df[biomarkers, i])) / length(cols) > 0.1) {
-      df[i] <- NULL
+  pos <- 1
+  while (pos <= length(colnames(df))) {
+    if (sum(is.na(df[biomarkers, pos])) / length(cols) > 0.1) {
+      df[pos] <- NULL
+      pos <- 1
+    } else {
+      pos <- pos + 1
     }
   }
   return(transpose_u(df))
