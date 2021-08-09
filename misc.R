@@ -223,9 +223,14 @@ df0.c2.k.mean <- res.clust.k %>%
 df0.all.k.mean <- rbind(df0.c1.k.mean, df0.c2.k.mean)
 df0.all.k.mean.t <- transpose_u(df0.all.k.mean)
 df0.all.k.mean.t <- data.frame(biomarkers = rownames(df0.all.k.mean.t), value1 = df0.all.k.mean.t$`1`, value2 = df0.all.k.mean.t$`2`)
+df0.all.k.mean.t <- df0.all.k.mean.t %>%
+  mutate(diff = value2 - value1) %>%
+  arrange(-diff)
+df0.all.k.mean.t$biomarkers <- factor(df0.all.k.mean.t$biomarkers, levels = df0.all.k.mean.t$biomarkers[order(-df0.all.k.mean.t$diff)])
 
 p = ggplot() + geom_line(data = df0.all.k.mean.t, aes(x = biomarkers, y = value1, color = "Cluster 1", group = 1)) +
-  geom_line(data = df0.all.k.mean.t, aes(x = biomarkers, y = value2, color = "Cluster 2", group = 1)) + coord_flip() + 
+  geom_line(data = df0.all.k.mean.t, aes(x = biomarkers, y = value2, color = "Cluster 2", group = 1)) + 
+  theme(axis.text.x = element_text(size = 5, angle = 45, hjust = 1)) + 
   labs(x = "biomarkers", y = "mean z-score of log2")
   
 print(p)
