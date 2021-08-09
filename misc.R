@@ -19,6 +19,7 @@ library(ComplexHeatmap)
 
 source("./R/functions2.R")
 
+# Misc code
 
 df.inner.join.1 <- inner_join(df.hclust.1, df.kmeans.1, by = "biomarker_key_SUBJECTID")
 
@@ -35,6 +36,9 @@ df.new <- read.csv("dataset_clustering_complex_8.4.21.csv", stringsAsFactors = F
 
 df.check.1 <- inner_join(df.old %>% filter(cluster == 1), df.new %>% filter(cluster == 2), by = c("biomarker_key_PROPPRID"))
 df.check.2 <- inner_join(df.old %>% filter(cluster == 2), df.new %>% filter(cluster == 1), by = c("biomarker_key_PROPPRID"))
+
+
+# Start main analysis code
 
 df0 = read.xlsx("./data/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 df0 <- df0 %>%
@@ -55,11 +59,6 @@ df0.p[std_biomarkers] <- lapply(df0.p[std_biomarkers], as.numeric)
 
 df0.p.t <- transpose_u(df0.p)
 
-# Remove the 4 outliers
-#df0.p.t$`576` <- NULL
-#df0.p.t$`587` <- NULL
-#df0.p.t$`355` <- NULL
-#df0.p.t$`579` <- NULL
 
 subj.num <- colnames(df0.p.t)
 
@@ -89,15 +88,16 @@ map.all.h <- pheatmap(
 fviz_nbclust(df0.p.map, hcut, method = "silhouette")
 
 clusters <- cutree(map.all.h$tree_col, k = 2)
+# Do hclust and assign to subjects.
 res.clust.h <- cbind(transpose_u(df0.p.t), cluster = cutree(map.all.h$tree_col, k = 2))
-
-
 res.clust.h[std_biomarkers] <- lapply(res.clust.h[std_biomarkers], as.numeric)
 
+# Do PCA
 res.pca.h <- PCA(res.clust.h[std_biomarkers], graph = F)
 fviz_screeplot(res.pca.h, addlabels = T, ylim = c(0, 50))
 var_pca <- get_pca_var(res.pca.h)
 fviz_contrib(res.pca.h, choice = "var", axes = 1, top = 10)
+# PCA Plot
 fviz_pca_ind(res.pca.h,
              label = "none",
              col.ind = as.character(res.clust.h$cluster),
@@ -134,7 +134,7 @@ pheatmap(
 )
 
 
-# PCA on Kmeans clusters
+# K Means
 
 df0.p.k <- transpose_u(df0.p.t)
 
@@ -159,21 +159,23 @@ col.maps <- circlize::colorRamp2(breaks, rampcolors)
 
 set.seed(42)
 
-map.all.k <- pheatmap(
-  df0.p2,
-  kmeans_k=2,
-  cluster_rows = F, cluster_cols = T,
-  cellwidth = 20,
-  cellheight = 20,
-  fontsize = 10,
-  cutree_cols = 2,
-  display_numbers = T,
-  treeheight_col = 0,
-  color = rampcolors,
-  breaks = breaks,
-  #filename = "./R_figures/kmeans_heatmap.png"
-)
+# Old pheatmap, deprecated. 
+#map.all.k <- pheatmap(
+#  df0.p2,
+#  kmeans_k=2,
+#  cluster_rows = F, cluster_cols = T,
+#  cellwidth = 20,
+#  cellheight = 20,
+#  fontsize = 10,
+#  cutree_cols = 2,
+#  display_numbers = T,
+#  treeheight_col = 0,
+#  color = rampcolors,
+#  breaks = breaks,
+#  #filename = "./R_figures/kmeans_heatmap.png"
+#)
 
+# K-Means with complex heatmap
 set.seed(42)
 png(filename = "./R_figures/complex_kmeans_heatmap.png", width=10,height=10,units="in",res=1200)
 map.all.k <- Heatmap(
@@ -186,6 +188,7 @@ ht
 dev.off()
 clusterlist = row_order(ht)
 
+# Get clusters and assign to subjects.
 clusters.k <- map.all.k$kmeans$cluster
 
 row.names(df0.p.k) <- df0.p.k$biomarker_key_PROPPRID
@@ -220,6 +223,8 @@ df0.c2.k.mean <- res.clust.k %>%
   select(all_of(std_biomarkers)) %>%
   summarise_all(mean, na.rm = T)
 
+
+# Create line plot to visualize differences between the two clusters.
 df0.all.k.mean <- rbind(df0.c1.k.mean, df0.c2.k.mean)
 df0.all.k.mean.t <- transpose_u(df0.all.k.mean)
 df0.all.k.mean.t <- data.frame(biomarkers = rownames(df0.all.k.mean.t), value1 = df0.all.k.mean.t$`1`, value2 = df0.all.k.mean.t$`2`)
@@ -236,18 +241,12 @@ p = ggplot() + geom_line(data = df0.all.k.mean.t, aes(x = biomarkers, y = value1
 print(p)
 ggsave("compare_clusters_line.png", plot = p)
 
+
+# Do pheatmaps of individuals clusters.
 df0.c1.k <- res.clust.k %>% 
   filter(cluster == 1)
 df0.c2.k <- res.clust.k %>%
   filter(cluster == 2)
-df0.c3.k <- res.clust.k %>%
-  filter(cluster == 3)
-df0.c4.k <- res.clust.k %>%
-  filter(cluster == 4)
-
-print(res.clust.k %>% count(INJ_MECH))
-print(df0.c1.k %>% count(INJ_MECH))
-print(df0.c2.k %>% count(INJ_MECH))
 
 map.clust.k.1 <- res.clust.k %>%
   select(all_of(std_biomarkers), cluster) %>%
@@ -300,7 +299,7 @@ pheatmap(
   filename = "./R_figures/kmeans_heatmap_clust2.png"
 )
 
-# PCA Start
+# PCA K-means plot
 res.clust.pca.k <- res.clust.k %>%
   select(all_of(std_biomarkers))
 res.clust.pca.k[std_biomarkers] <- lapply(res.clust.pca.k[std_biomarkers], as.numeric)
@@ -350,12 +349,6 @@ df0.c1 <- res.clust.k %>%
   filter(cluster == 1)
 df0.c2 <- res.clust.k %>%
   filter(cluster == 2)
-df0.c3 <- res.clust.k %>%
-  filter(cluster == 3)
-df0.c4 <- res.clust.k %>%
-  filter(cluster == 4)
-
-
 
 cluster.list <- list(df0.c1, df0.c2)#, df0.c3, df0.c4)
 
@@ -409,15 +402,3 @@ summary(pca.3d.k)
 scores <- as.data.frame(pca.3d.k$x)
 plot3d(scores[,1:3], col=res.clust.k$cluster, size=10, type='p', xlim=c(-10, 10), ylim=c(-10,10), zlim=c(-10,10))
 #text3d(scores[,1] + 2, scores[,2] + 10, scores[,3] + 2, texts = c(rownames(scores)), cex=0.7, pos=3)
-
-df1 <- read.csv("./data/dataset_clustering_edm_8.2.21.csv", stringsAsFactors = F)
-df1.hclust <- read.xlsx("./Compare_K_Hclust/dataset_clustering.xlsx", sheet = "Hclust")
-df1.hclust$biomarker_key_SUBJECTID <- as.numeric(df1.hclust$biomarker_key_SUBJECTID)
-df1.hclust <- df1.hclust %>% select(biomarker_key_SUBJECTID, cluster)
-df1.kmeans <- read.xlsx("./Compare_K_Hclust/dataset_clustering.xlsx", sheet = "Kmeans")
-df1.kmeans$biomarker_key_SUBJECTID <- as.numeric(df1.kmeans$biomarker_key_SUBJECTID)
-df1.kmeans <- df1.kmeans %>% select(biomarker_key_SUBJECTID, cluster)
-df1 <- left_join(df1, df1.hclust, by = "biomarker_key_SUBJECTID")
-df2 <- left_join(df1, df1.kmeans, by = "biomarker_key_SUBJECTID")
-write.csv(df1, "dataset_clustering_tl_8.2.21.csv")
-write.csv(df2, "dataset_clustering_tl_8.2.21_k.csv")
