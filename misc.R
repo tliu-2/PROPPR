@@ -59,12 +59,15 @@ df0.p[std_biomarkers] <- lapply(df0.p[std_biomarkers], as.numeric)
 
 df0.p.t <- transpose_u(df0.p)
 
-
 subj.num <- colnames(df0.p.t)
 
 df0.p.map <- transpose_u(df0.p.t) %>% select(all_of(std_biomarkers))
 df0.p.map <- as.data.frame(lapply(df0.p.map, as.numeric))
 rownames(df0.p.map) <- subj.num
+
+table_s1 <- sub("log2_", "", std_biomarkers)
+table_s1 <- sub("Hu_", "", table_s1)
+table_s1 <- sub("_std", "", table_s1)
 
 df0.p.map.ex <- data.frame(row = subj.num, df0.p.map)
 df0.p.map.ex <- as.data.frame(lapply(df0.p.map.ex, as.numeric))
@@ -141,6 +144,7 @@ df0.p.k <- transpose_u(df0.p.t)
 df0.p2 <- df0.p.k %>%
   select(all_of(std_biomarkers))
 df0.p2[std_biomarkers] <- lapply(df0.p2[std_biomarkers], as.numeric)
+colnames(df0.p2) <- table_s1
 fviz_nbclust(df0.p2, kmeans, method = "silhouette")
 fviz_nbclust(df0.p2, kmeans, method = "gap_stat")
 fviz_nbclust(df0.p2, kmeans, method = "wss")
@@ -177,11 +181,13 @@ set.seed(42)
 
 # K-Means with complex heatmap
 set.seed(42)
-png(filename = "./R_figures/complex_kmeans_heatmap.png", width=10,height=10,units="in",res=1200)
+png(filename = "./R_figures/complex_kmeans_heatmap_2.png", width=10,height=10,units="in",res=1200)
 map.all.k <- Heatmap(
-  data.matrix(df0.p2), width = unit(15, "cm"),
+  data.matrix(df0.p2),
+  cluster_columns = F,
+  name = "z_scores",
   cluster_rows = F,
-  row_km = 2
+  row_km = 2,
 )
 ht <- draw(map.all.k)
 ht
@@ -239,7 +245,7 @@ p = ggplot() + geom_line(data = df0.all.k.mean.t, aes(x = biomarkers, y = value1
   labs(x = "biomarkers", y = "mean z-score of log2")
   
 print(p)
-ggsave("compare_clusters_line.png", plot = p)
+ggsave("compare_clusters_line2.png", plot = p)
 
 
 # Do pheatmaps of individuals clusters.
