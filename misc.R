@@ -42,7 +42,7 @@ df.check.2 <- inner_join(df.old %>% filter(cluster == 2), df.new %>% filter(clus
 
 df0 = read.xlsx("./data/PROPPR_longitudinal_data_dictionary_edm_5.13.20.xlsx", sheet = "timepoint_0")
 df0 <- df0 %>%
-  filter(INJ_MECH == "Blunt Injury Only")
+  filter(INJ_MECH != "Both Types of Injury")
 
 print(df0 %>% select(all_of(outcomes), INJ_MECH, female1, AGE, WHITE_RE, BLACK_RE, OTHER_RE) 
       %>% group_by(INJ_MECH) %>% 
@@ -181,7 +181,7 @@ set.seed(42)
 
 # K-Means with complex heatmap
 set.seed(42)
-png(filename = "./R_figures/complex_kmeans_heatmap_2.png", width=10,height=10,units="in",res=1200)
+png(filename = "./R_figures/complex_kmeans_heatmap_v2.png", width=10,height=10,units="in",res=1200)
 map.all.k <- Heatmap(
   data.matrix(df0.p2),
   cluster_columns = F,
@@ -192,10 +192,10 @@ map.all.k <- Heatmap(
 ht <- draw(map.all.k)
 ht
 dev.off()
-clusterlist = row_order(ht)
+# clusterlist = row_order(ht)
 
 # Get clusters and assign to subjects.
-clusters.k <- map.all.k$kmeans$cluster
+# clusters.k <- map.all.k$kmeans$cluster
 
 row.names(df0.p.k) <- df0.p.k$biomarker_key_PROPPRID
 rcl.list <- row_order(ht)
